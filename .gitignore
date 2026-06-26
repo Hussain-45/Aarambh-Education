@@ -8,9 +8,17 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
+server/node_modules
 dist
 dist-ssr
 *.local
+
+# Heavy folders and auth
+server/.wwebjs_auth
+server/uploads
+.env
+server/.env
+server/aarambh.db
 
 # Editor directories and files
 .vscode/*
