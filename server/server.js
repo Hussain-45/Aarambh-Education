@@ -12,6 +12,23 @@ const qrcode = require('qrcode');
 
 require('dotenv').config();
 
+// --- Twilio SMS Setup ---
+const twilio = require('twilio');
+const twilioSid = process.env.TWILIO_ACCOUNT_SID;
+const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN;
+const twilioPhone = process.env.TWILIO_PHONE_NUMBER;
+
+let twilioClient = null;
+if (twilioSid && twilioSid !== 'your_account_sid_here' && twilioAuthToken && twilioAuthToken !== 'your_auth_token_here') {
+  try {
+    twilioClient = twilio(twilioSid, twilioAuthToken);
+    console.log('[SMS] Twilio client initialized successfully.');
+  } catch (e) {
+    console.error('[SMS] Failed to initialize Twilio client:', e);
+  }
+}
+// ------------------------
+
 // --- AUDIT LOG HELPER ---
 const logAction = (action, details) => {
   db.run(`INSERT INTO audit_logs (action, details) VALUES (?, ?)`, [action, details], (err) => {
@@ -401,16 +418,80 @@ app.get('/api/fees', authenticateToken, (req, res) => {
   });
 });
 
+// --- Cellular SMS Dispatcher (Twilio & TextBelt) ---
+const sendRealSms = async (phone, message) => {
+  let targetPhone = phone.replace(/\D/g, '');
+  if (targetPhone.length === 10) {
+    targetPhone = `+91${targetPhone}`; // default to India prefix
+  } else if (!targetPhone.startsWith('+')) {
+    targetPhone = `+${targetPhone}`;
+  }
+
+  // 1. Try Twilio if configured
+  if (twilioClient && twilioPhone && twilioPhone !== 'your_twilio_phone_number_here') {
+    try {
+      const response = await twilioClient.messages.create({
+        body: message,
+        from: twilioPhone,
+        to: targetPhone
+      });
+      console.log(`[Twilio SMS Sent] SID: ${response.sid} to ${targetPhone}`);
+      return { success: true, provider: 'Twilio', sid: response.sid };
+    } catch (e) {
+      console.error('[Twilio SMS Error]', e.message);
+      // fallback to TextBelt if Twilio fails
+    }
+  }
+
+  // 2. Try TextBelt (Free or Paid)
+  try {
+    console.log(`[SMS Fallback] Attempting TextBelt delivery to ${targetPhone}...`);
+    const key = process.env.TEXTBELT_API_KEY || 'textbelt';
+    const response = await fetch('https://textbelt.com/text', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        phone: targetPhone,
+        message: message,
+        key: key
+      })
+    });
+    const data = await response.json();
+    if (data.success) {
+      console.log(`[TextBelt SMS Sent] to ${targetPhone}. Quota remaining: ${data.quotaRemaining}`);
+      return { success: true, provider: 'TextBelt', quotaRemaining: data.quotaRemaining };
+    } else {
+      console.error('[TextBelt SMS Error]', data.error);
+      return { success: false, error: data.error };
+    }
+  } catch (e) {
+    console.error('[SMS Service Error]', e.message);
+    return { success: false, error: e.message };
+  }
+};
+
 // --- Auto SMS Helper ---
 const sendAutoSms = async (phone, message) => {
-  if (waStatus === 'CONNECTED' && waClient && phone) {
-    let p = phone.replace(/\D/g, '');
-    if (p.length === 10) p = `91${p}`;
-    try {
-      await waClient.sendMessage(`${p}@c.us`, message);
-      console.log(`[Auto-SMS] Sent to ${p}`);
-    } catch (e) {
-      console.error('[Auto-SMS Error]', e);
+  if (!phone) return;
+  console.log(`[Auto-SMS] Dispatching to ${phone}...`);
+  const result = await sendRealSms(phone, message);
+  
+  if (!result.success) {
+    console.log(`[Auto-SMS Fallback] Cellular SMS failed. Simulating via Ethereal Email...`);
+    if (transporter) {
+      try {
+        const info = await transporter.sendMail({
+          from: '"Aarambh System" <admin@aarambh.edu>',
+          to: 'parent@aarambh.edu',
+          subject: `Auto-SMS Fallback to ${phone}`,
+          text: message
+        });
+        console.log(`[Auto-SMS Simulated] Link: ${nodemailer.getTestMessageUrl(info)}`);
+      } catch (err) {
+        console.error('[Auto-SMS Fallback Error]', err);
+      }
+    } else {
+      console.log(`[Auto-SMS Simulated] Message: "${message}" to ${phone}`);
     }
   }
 };
@@ -534,7 +615,7 @@ app.get('/api/whatsapp/status', authenticateToken, (req, res) => {
   res.json({ status: waStatus, qr: waQrDataUrl });
 });
 
-// Send message via Auto-WhatsApp or fallback to Ethereal
+// Send message via SMS (cellular) or Auto-WhatsApp
 app.post('/api/sms', authenticateToken, async (req, res) => {
   const { to, message, channel } = req.body;
   
@@ -560,7 +641,20 @@ app.post('/api/sms', authenticateToken, async (req, res) => {
     }
   }
 
-  // 2. Fallback or selected Ethereal Email
+  // 2. Try sending via Cellular SMS if selected
+  if (channel === 'SMS') {
+    const result = await sendRealSms(to, message);
+    if (result.success) {
+      return res.json({
+        success: true,
+        simulated: false,
+        message: `Message sent successfully via ${result.provider}`,
+        previewUrl: null
+      });
+    }
+  }
+
+  // 3. Fallback to Ethereal Email Simulation
   if (!transporter) {
     return res.status(500).json({ success: false, error: 'Email fallback system not ready yet.' });
   }
@@ -568,7 +662,7 @@ app.post('/api/sms', authenticateToken, async (req, res) => {
   try {
     const info = await transporter.sendMail({
       from: '"Aarambh System" <admin@aarambh.edu>',
-      to: `${to}@example.com`, // We mock their phone number as an email for Ethereal
+      to: `${to}@example.com`,
       subject: "New Message from Aarambh",
       text: message,
     });
@@ -578,8 +672,8 @@ app.post('/api/sms', authenticateToken, async (req, res) => {
     
     res.json({ 
       success: true, 
-      simulated: false, 
-      message: 'Message delivered successfully via Ethereal',
+      simulated: true, 
+      message: 'Message simulated successfully via Ethereal',
       previewUrl: url 
     });
   } catch (error) {

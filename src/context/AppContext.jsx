@@ -186,6 +186,35 @@ export const AppProvider = ({ children }) => {
     } catch (e) { console.error(e); }
   };
 
+  const removeStudent = async (studentId) => {
+    try {
+      const res = await fetch(`${API_URL}/students/${studentId}`, {
+        method: 'DELETE', headers: authHeaders
+      });
+      if (res.ok) {
+        setStudents(students.filter(s => s.id !== studentId));
+        addToast('Student removed successfully', 'success');
+        setFees(fees.filter(f => f.studentId !== studentId));
+        return true;
+      }
+    } catch (e) { console.error(e); }
+    return false;
+  };
+
+  const removeBatch = async (batchId) => {
+    try {
+      const res = await fetch(`${API_URL}/classes/${batchId}`, {
+        method: 'DELETE', headers: authHeaders
+      });
+      if (res.ok) {
+        setClasses(classes.filter(c => c.id !== batchId));
+        addToast('Batch deleted successfully', 'success');
+        return true;
+      }
+    } catch (e) { console.error(e); }
+    return false;
+  };
+
   const sendMessage = async (recipient, type, content) => {
     const newMsg = { id: Date.now(), recipient, type, content, date: new Date().toLocaleString(), status: 'Sending...' };
     setMessages(prev => [newMsg, ...prev]);
