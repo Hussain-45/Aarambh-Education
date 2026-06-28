@@ -90,6 +90,8 @@ const Sidebar = () => {
         {userRole === 'student' && (
           <>
             <SidebarItem icon={LayoutDashboard} label="My Dashboard" active={path === '/student-dashboard'} onClick={() => navigate('/student-dashboard')} />
+            <SidebarItem icon={CheckSquare} label="My Attendance" active={path === '/student-attendance'} onClick={() => navigate('/student-attendance')} />
+            <SidebarItem icon={IndianRupee} label="My Receipts" active={path === '/student-receipts'} onClick={() => navigate('/student-receipts')} />
             <SidebarItem icon={BookOpen} label="My Assignments" active={path === '/assignments'} onClick={() => navigate('/assignments')} />
             <SidebarItem icon={Calendar} label="Class Schedule" active={path === '/calendar'} onClick={() => navigate('/calendar')} />
             <SidebarItem icon={BookOpen} label="Study Materials" active={path === '/library'} onClick={() => navigate('/library')} />

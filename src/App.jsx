@@ -9,6 +9,8 @@ import Students from './pages/Students';
 import Classes from './pages/Classes';
 import ClassDetails from './pages/ClassDetails';
 import StudentDashboard from './pages/StudentDashboard';
+import StudentAttendance from './pages/StudentAttendance';
+import StudentReceipts from './pages/StudentReceipts';
 import TeacherDashboard from './pages/TeacherDashboard';
 import Assignments from './pages/Assignments';
 import CalendarView from './pages/CalendarView';
@@ -83,6 +85,8 @@ const AppLayout = () => {
         
         {/* Student Routes */}
         <Route path="/student-dashboard" element={<StudentRoute><StudentDashboard /></StudentRoute>} />
+        <Route path="/student-attendance" element={<StudentRoute><StudentAttendance /></StudentRoute>} />
+        <Route path="/student-receipts" element={<StudentRoute><StudentReceipts /></StudentRoute>} />
 
         {/* Teacher Routes */}
         <Route path="/teacher-dashboard" element={<TeacherRoute><TeacherDashboard /></TeacherRoute>} />
