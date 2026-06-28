@@ -2,10 +2,10 @@ import React, { useContext, useState, useEffect } from 'react';
 import { AppContext } from '../context/AppContext';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
-import { Moon, Sun, Lock, User, Save, Bell, Globe, MonitorSmartphone, Cloud, Loader } from 'lucide-react';
+import { Moon, Sun, Lock, User, Save, Bell, Globe, MonitorSmartphone, Cloud, Loader, Clock } from 'lucide-react';
 
 const Settings = () => {
-  const { theme, setTheme, loggedInUser, addToast, authHeaders, API_URL } = useContext(AppContext);
+  const { theme, setTheme, loggedInUser, addToast, authHeaders, API_URL, history, messages, fetchHistory, updateProfile } = useContext(AppContext);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
 
@@ -14,10 +14,17 @@ const Settings = () => {
   const [smsAlerts, setSmsAlerts] = useState(false);
   const [language, setLanguage] = useState('English');
   const [driveConnected, setDriveConnected] = useState(false);
+  const [historyTab, setHistoryTab] = useState('activity');
 
   // WhatsApp Robot States
   const [waStatus, setWaStatus] = useState('LOADING');
   const [waQr, setWaQr] = useState(null);
+
+  useEffect(() => {
+    if (loggedInUser?.role === 'admin') {
+      fetchHistory();
+    }
+  }, [loggedInUser]);
 
   useEffect(() => {
     // Poll WhatsApp status every 3 seconds if not connected
@@ -439,6 +446,93 @@ const Settings = () => {
               <button className="prof-btn" style={{ background: 'var(--danger)', color: 'white', borderColor: 'var(--danger)', padding: '0.5rem 1rem' }}>Delete Account</button>
             </div>
           </div>
+
+          {loggedInUser?.role === 'admin' && (
+            <div className="prof-card" style={{ marginBottom: '2rem' }}>
+              <h3 style={{ margin: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Clock size={18} /> System History & Logs
+              </h3>
+              
+              {/* Tab navigation */}
+              <div style={{ display: 'flex', gap: '1rem', borderBottom: '1px solid var(--border-color)', marginBottom: '1.5rem', paddingBottom: '0.5rem', flexWrap: 'wrap' }}>
+                <button 
+                  onClick={() => setHistoryTab('activity')}
+                  className={`prof-btn ${historyTab === 'activity' ? '' : 'prof-btn-outline'}`}
+                  style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
+                >
+                  System Activity
+                </button>
+                <button 
+                  onClick={() => setHistoryTab('messages')}
+                  className={`prof-btn ${historyTab === 'messages' ? '' : 'prof-btn-outline'}`}
+                  style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
+                >
+                  Messages Sent
+                </button>
+                <button 
+                  onClick={() => setHistoryTab('backups')}
+                  className={`prof-btn ${historyTab === 'backups' ? '' : 'prof-btn-outline'}`}
+                  style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
+                >
+                  Emailed Backups & Reports
+                </button>
+              </div>
+
+              {/* Tab data display */}
+              <div style={{ maxHeight: '300px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.8rem', paddingRight: '0.5rem' }}>
+                {historyTab === 'activity' && (
+                  history.length === 0 ? (
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: '1rem 0' }}>No activity logs recorded yet.</p>
+                  ) : (
+                    history.map(log => (
+                      <div key={log.id} style={{ padding: '0.8rem 1rem', background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '8px', fontSize: '0.85rem' }}>
+                        <div className="flex-between" style={{ marginBottom: '0.3rem' }}>
+                          <span style={{ fontWeight: 600, color: 'var(--primary)' }}>{log.action.replace(/_/g, ' ')}</span>
+                          <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>{new Date(log.timestamp).toLocaleString()}</span>
+                        </div>
+                        <p style={{ margin: 0, color: 'var(--text-main)' }}>{log.details}</p>
+                      </div>
+                    ))
+                  )
+                )}
+
+                {historyTab === 'messages' && (
+                  messages.length === 0 ? (
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: '1rem 0' }}>No messages sent yet.</p>
+                  ) : (
+                    messages.map(msg => (
+                      <div key={msg.id} style={{ padding: '0.8rem 1rem', background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '8px', fontSize: '0.85rem' }}>
+                        <div className="flex-between" style={{ marginBottom: '0.3rem' }}>
+                          <span style={{ fontWeight: 600 }}>Recipient: {msg.recipient}</span>
+                          <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>{msg.date}</span>
+                        </div>
+                        <p style={{ margin: '0 0 0.4rem 0', color: 'var(--text-main)' }}>{msg.content}</p>
+                        <span className={`badge ${msg.status === 'Failed' ? 'badge-danger' : 'badge-success'}`} style={{ fontSize: '0.7rem' }}>
+                          Status: {msg.status}
+                        </span>
+                      </div>
+                    ))
+                  )
+                )}
+
+                {historyTab === 'backups' && (
+                  history.filter(log => log.action === 'BACKUP_EMAILED' || log.action === 'REPORT_EMAILED').length === 0 ? (
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: '1rem 0' }}>No backups or reports emailed yet.</p>
+                  ) : (
+                    history.filter(log => log.action === 'BACKUP_EMAILED' || log.action === 'REPORT_EMAILED').map(log => (
+                      <div key={log.id} style={{ padding: '0.8rem 1rem', background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '8px', fontSize: '0.85rem' }}>
+                        <div className="flex-between" style={{ marginBottom: '0.3rem' }}>
+                          <span style={{ fontWeight: 600, color: 'var(--success)' }}>{log.action.replace(/_/g, ' ')}</span>
+                          <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>{new Date(log.timestamp).toLocaleString()}</span>
+                        </div>
+                        <p style={{ margin: 0, color: 'var(--text-main)' }}>{log.details}</p>
+                      </div>
+                    ))
+                  )
+                )}
+              </div>
+            </div>
+          )}
           
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '2rem' }}>
             <button onClick={handleSavePreferences} className="prof-btn" style={{ padding: '0.75rem 2rem' }}>

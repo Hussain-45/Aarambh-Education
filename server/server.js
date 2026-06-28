@@ -876,6 +876,7 @@ app.post('/api/admin/backup', authenticateToken, (req, res) => {
       
       const previewUrl = nodemailer.getTestMessageUrl(info);
       console.log(`[Backup Emailed] Preview: ${previewUrl}`);
+      logAction('BACKUP_EMAILED', `Admin requested database backup emailed to ${row.email}`);
       res.json({ success: true, previewUrl });
     } catch (e) {
       console.error(e);
@@ -948,6 +949,7 @@ app.post('/api/admin/report', authenticateToken, (req, res) => {
             
             const previewUrl = nodemailer.getTestMessageUrl(info);
             console.log(`[Weekly Report Emailed] Preview: ${previewUrl}`);
+            logAction('REPORT_EMAILED', `Admin triggered weekly operational report emailed to ${adminUser.email}`);
             res.json({ success: true, previewUrl });
           } catch(e) {
             console.error(e);
