@@ -267,6 +267,10 @@ app.post('/api/admin/requests/:id/approve', authenticateToken, (req, res) => {
           
           logAction('REQUEST_APPROVED', `Admin approved registration for ${request.name || request.username} (${request.role})`);
           
+          if (request.parentPhone) {
+            sendAutoSms(request.parentPhone, `Your registration at Aarambh has been approved! Username: ${request.username}, Password: pass`);
+          }
+          
           res.json({ success: true, admission_number: admNum });
       });
     }
@@ -299,7 +303,24 @@ app.post('/api/classes', authenticateToken, (req, res) => {
   const { name, grade, time } = req.body;
   db.run(`INSERT INTO classes (name, grade, time) VALUES (?, ?, ?)`, [name, grade, time], function(err) {
     if (err) return res.status(500).json({ error: err.message });
+    logAction('CLASS_ADDED', `Admin created new batch: ${name}`);
     res.json({ id: this.lastID, name, grade, time });
+  });
+});
+
+// Delete a class (Admin only)
+app.delete('/api/classes/:id', authenticateToken, (req, res) => {
+  if (req.user.role !== 'admin') return res.sendStatus(403);
+  const classId = req.params.id;
+  db.get(`SELECT name FROM classes WHERE id = ?`, [classId], (err, row) => {
+    if (err || !row) return res.status(404).json({ error: 'Class not found' });
+    db.run(`DELETE FROM classes WHERE id = ?`, [classId], function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      // Remove students from this class
+      db.run(`DELETE FROM users WHERE className = ? AND role = 'student'`, [row.name]);
+      logAction('CLASS_DELETED', `Admin deleted batch: ${row.name}`);
+      res.json({ success: true });
+    });
   });
 });
 
@@ -326,6 +347,24 @@ app.post('/api/students', authenticateToken, async (req, res) => {
       logAction('STUDENT_ADDED', `Admin added new student: ${name} to class ${className}`);
       
       res.json({ id: this.lastID, name, class: className, parentPhone });
+  });
+});
+
+// Delete a student (Admin only)
+app.delete('/api/students/:id', authenticateToken, (req, res) => {
+  if (req.user.role !== 'admin') return res.sendStatus(403);
+  const studentId = req.params.id;
+  
+  db.run(`DELETE FROM fees WHERE student_id = ?`, [studentId], (err) => {
+    db.run(`DELETE FROM attendance WHERE student_id = ?`, [studentId], (err) => {
+      db.run(`DELETE FROM users WHERE id = ? AND role = 'student'`, [studentId], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        if (this.changes === 0) return res.status(404).json({ error: 'Student not found' });
+        
+        logAction('STUDENT_DELETED', `Admin removed student ID: ${studentId}`);
+        res.json({ success: true });
+      });
+    });
   });
 });
 
@@ -362,12 +401,27 @@ app.get('/api/fees', authenticateToken, (req, res) => {
   });
 });
 
+// --- Auto SMS Helper ---
+const sendAutoSms = async (phone, message) => {
+  if (waStatus === 'CONNECTED' && waClient && phone) {
+    let p = phone.replace(/\D/g, '');
+    if (p.length === 10) p = `91${p}`;
+    try {
+      await waClient.sendMessage(`${p}@c.us`, message);
+      console.log(`[Auto-SMS] Sent to ${p}`);
+    } catch (e) {
+      console.error('[Auto-SMS Error]', e);
+    }
+  }
+};
+// -----------------------
+
 app.put('/api/fees/:id/pay', authenticateToken, (req, res) => {
   if (req.user.role !== 'admin') return res.sendStatus(403);
   const studentId = parseInt(req.params.id);
   const { amount, paymentMode, paymentDate } = req.body;
   
-  db.get(`SELECT * FROM fees WHERE student_id = ?`, [studentId], (err, fee) => {
+  db.get(`SELECT fees.*, users.name, users.parentPhone FROM fees JOIN users ON fees.student_id = users.id WHERE fees.student_id = ?`, [studentId], (err, fee) => {
     if (err || !fee) return res.status(404).json({ error: 'Fee record not found' });
     
     const newPaid = fee.paid + amount;
@@ -379,6 +433,10 @@ app.put('/api/fees/:id/pay', authenticateToken, (req, res) => {
       if (err) return res.status(500).json({ error: err.message });
       
       logAction('FEE_PAID', `Recorded fee payment of Rs. ${amount} for student ID ${studentId}. Mode: ${paymentMode || 'Cash'}, Status: ${newStatus}`);
+      
+      if (fee.parentPhone) {
+        sendAutoSms(fee.parentPhone, `Dear Parent, we have received a payment of Rs. ${amount} for ${fee.name}. Thank you! - Aarambh`);
+      }
       
       res.json({ success: true, paid: newPaid, status: newStatus, paymentMode, paymentDate });
     });
@@ -393,6 +451,35 @@ app.get('/api/admin/history', authenticateToken, (req, res) => {
     res.json(rows);
   });
 });
+
+// --- EXPENSES ROUTES (PROFIT & LOSS) ---
+app.get('/api/expenses', authenticateToken, (req, res) => {
+  if (req.user.role !== 'admin') return res.sendStatus(403);
+  db.all(`SELECT * FROM expenses ORDER BY id DESC`, [], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
+});
+
+app.post('/api/expenses', authenticateToken, (req, res) => {
+  if (req.user.role !== 'admin') return res.sendStatus(403);
+  const { title, amount, date } = req.body;
+  db.run(`INSERT INTO expenses (title, amount, date) VALUES (?, ?, ?)`, [title, amount, date], function(err) {
+    if (err) return res.status(500).json({ error: err.message });
+    logAction('EXPENSE_ADDED', `Admin added expense: ${title} of Rs. ${amount}`);
+    res.json({ id: this.lastID, title, amount, date });
+  });
+});
+
+app.delete('/api/expenses/:id', authenticateToken, (req, res) => {
+  if (req.user.role !== 'admin') return res.sendStatus(403);
+  const expenseId = parseInt(req.params.id);
+  db.run(`DELETE FROM expenses WHERE id = ?`, [expenseId], function(err) {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ success: true });
+  });
+});
+// ---------------------------------------
 
 // Get assignments
 app.get('/api/assignments', authenticateToken, (req, res) => {

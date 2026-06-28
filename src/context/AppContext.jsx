@@ -343,7 +343,7 @@ export const AppProvider = ({ children }) => {
       theme, setTheme, 
       students, teachers, fees, messages, toasts, classes,
       assignments, submissions, calendarEvents, library, history,
-      sendMessage, recordFeePayment, addToast, addStudent, authHeaders, API_URL,
+      sendMessage, recordFeePayment, addToast, addStudent, removeStudent, removeBatch, authHeaders, API_URL,
       addAssignment, addLibraryMaterial, fetchHistory
     }}>
       {children}

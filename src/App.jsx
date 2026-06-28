@@ -16,6 +16,7 @@ import Library from './pages/Library';
 import Requests from './pages/Requests';
 import Settings from './pages/Settings';
 import History from './pages/History';
+import ProfitLoss from './pages/ProfitLoss';
 import { AppProvider, AppContext } from './context/AppContext';
 import ToastContainer from './components/Toast';
 import Chatbot from './components/Chatbot';
@@ -71,6 +72,7 @@ const AppLayout = () => {
         
         {/* Admin Routes */}
         <Route path="/dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+        <Route path="/profit-loss" element={<AdminRoute><ProfitLoss /></AdminRoute>} />
         <Route path="/attendance" element={<AdminRoute><Attendance /></AdminRoute>} />
         <Route path="/fees" element={<AdminRoute><Fees /></AdminRoute>} />
         <Route path="/messages" element={<AdminRoute><Messages /></AdminRoute>} />

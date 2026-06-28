@@ -97,6 +97,14 @@ const db = new sqlite3.Database(dbPath, (err) => {
         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
       )`);
 
+      // Expenses Table (Profit & Loss)
+      db.run(`CREATE TABLE IF NOT EXISTS expenses (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        amount INTEGER NOT NULL,
+        date TEXT NOT NULL
+      )`);
+
       console.log('Database schema ensured.');
     });
   }

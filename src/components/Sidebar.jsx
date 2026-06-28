@@ -59,6 +59,7 @@ const Sidebar = () => {
         {userRole === 'admin' && (
           <>
             <SidebarItem icon={LayoutDashboard} label="Dashboard" active={path === '/dashboard'} onClick={() => navigate('/dashboard')} />
+            <SidebarItem icon={IndianRupee} label="Profit & Loss" active={path === '/profit-loss'} onClick={() => navigate('/profit-loss')} />
             <SidebarItem icon={CheckSquare} label="Attendance" active={path === '/attendance'} onClick={() => navigate('/attendance')} />
             <SidebarItem icon={IndianRupee} label="Fees" active={path === '/fees'} onClick={() => navigate('/fees')} />
             <SidebarItem icon={BookOpen} label="Assignments" active={path === '/assignments'} onClick={() => navigate('/assignments')} />

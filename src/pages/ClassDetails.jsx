@@ -10,7 +10,7 @@ const ClassDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { userRole, classes, students, fees, assignments, library, addStudent, sendMessage, addToast, recordFeePayment } = useContext(AppContext);
+  const { userRole, classes, students, fees, assignments, library, addStudent, removeStudent, removeBatch, sendMessage, addToast, recordFeePayment } = useContext(AppContext);
   const [activeTab, setActiveTab] = useState(location.state?.activeTab || 'roster');
   
   const [showAddStudent, setShowAddStudent] = useState(false);
@@ -57,15 +57,36 @@ const ClassDetails = () => {
     addToast(`Reminder sent to ${student.name}'s parent`, 'success');
   };
 
+  const handleRemoveBatch = async () => {
+    if (window.confirm(`Are you sure you want to delete the batch "${classData.name}"? This action cannot be undone.`)) {
+      const success = await removeBatch(classData.id);
+      if (success) {
+        navigate('/students');
+      }
+    }
+  };
+
   return (
     <>
       <Sidebar />
       <main className="main-content">
         <Header />
-        <div style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <button onClick={() => navigate('/classes')} style={{ background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)' }}>
-            <ArrowLeft size={20} /> Back to Classes
-          </button>
+        
+        <div className="flex-between" style={{ marginBottom: '2rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <button onClick={() => navigate('/students')} className="prof-btn prof-btn-secondary" style={{ padding: '0.5rem' }}>
+              <ArrowLeft size={18} />
+            </button>
+            <div>
+              <h2 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>{classData.name}</h2>
+              <span className="badge badge-warning">{classData.grade}</span>
+            </div>
+          </div>
+          {userRole === 'admin' && (
+            <button onClick={handleRemoveBatch} className="prof-btn prof-btn-outline" style={{ borderColor: 'var(--danger)', color: 'var(--danger)' }}>
+              Delete Batch
+            </button>
+          )}
         </div>
 
         <div className="prof-card" style={{ marginBottom: '2rem' }}>
@@ -109,7 +130,7 @@ const ClassDetails = () => {
                     <td style={{ fontWeight: 500 }}>{student.name}</td>
                     <td style={{ color: 'var(--text-muted)' }}>{student.parentPhone}</td>
                     <td style={{ textAlign: 'right' }}>
-                      <button className="prof-btn prof-btn-secondary" style={{ color: 'var(--danger)', borderColor: 'var(--danger)', background: 'transparent', padding: '0.3rem 0.6rem', fontSize: '0.8rem' }} onClick={() => addToast('Feature coming soon: Remove Student', 'warning')}>
+                      <button className="prof-btn prof-btn-secondary" style={{ color: 'var(--danger)', borderColor: 'var(--danger)', background: 'transparent', padding: '0.3rem 0.6rem', fontSize: '0.8rem' }} onClick={() => { if(window.confirm('Remove this student?')) removeStudent(student.id); }}>
                         Remove
                       </button>
                     </td>
