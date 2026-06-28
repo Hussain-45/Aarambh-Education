@@ -16,6 +16,9 @@ const ClassDetails = () => {
   const [showAddStudent, setShowAddStudent] = useState(false);
   const [newStudentName, setNewStudentName] = useState('');
   const [newStudentPhone, setNewStudentPhone] = useState('');
+  
+  const currentMonthName = new Date().toLocaleString('default', { month: 'long' });
+  const [selectedMonth, setSelectedMonth] = useState(currentMonthName);
 
   const classData = classes.find(c => c.id === parseInt(id));
   if (!classData) return <div>Class Not Found</div>;
@@ -27,11 +30,12 @@ const ClassDetails = () => {
   const classLibrary = library.filter(l => l.subject === classData.name);
 
   const handleExportFees = () => {
-    const rows = classFees.map(f => {
+    const filteredFees = classFees.filter(f => f.month === selectedMonth);
+    const rows = filteredFees.map(f => {
       const studentName = classStudents.find(s => s.id === f.studentId)?.name || 'Unknown';
       return [studentName, `Rs. ${f.total}`, `Rs. ${f.paid}`, `Rs. ${f.total - f.paid}`, f.status];
     });
-    exportToPDF(`${classData.name} - Fee Report`, 'fee_report', rows, ['Student', 'Total', 'Paid', 'Balance', 'Status']);
+    exportToPDF(`${classData.name} - Fee Report (${selectedMonth})`, 'fee_report', rows, ['Student', 'Total', 'Paid', 'Balance', 'Status']);
   };
 
   const handleAddStudent = async () => {
@@ -53,8 +57,8 @@ const ClassDetails = () => {
   const handleSendReminder = (fee) => {
     const student = classStudents.find(s => s.id === fee.studentId);
     const amountDue = fee.total - fee.paid;
-    sendMessage(student.parentPhone, 'SMS', `Reminder: Fees of Rs.${amountDue} for ${student.name} is due.`);
-    addToast(`Reminder sent to ${student.name}'s parent`, 'success');
+    sendMessage(student.parentPhone, 'Auto-WhatsApp', `Reminder: Monthly tuition fee of Rs.${amountDue} for ${student.name} for the month of ${fee.month} is due. Please clear it soon. - Aarambh`);
+    addToast(`WhatsApp reminder sent to ${student.name}'s parent`, 'success');
   };
 
   const handleRemoveBatch = async () => {
@@ -145,14 +149,29 @@ const ClassDetails = () => {
 
         {activeTab === 'fees' && (
           <div className="prof-card">
-            <div className="flex-between" style={{ marginBottom: '1rem' }}>
-              <h3 style={{ margin: 0 }}>Fee Records</h3>
+            <div className="flex-between" style={{ marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <h3 style={{ margin: 0 }}>Fee Records</h3>
+                <select 
+                  className="prof-input" 
+                  style={{ width: '180px', padding: '0.4rem' }}
+                  value={selectedMonth}
+                  onChange={e => setSelectedMonth(e.target.value)}
+                >
+                  {[
+                    'January', 'February', 'March', 'April', 'May', 'June', 
+                    'July', 'August', 'September', 'October', 'November', 'December'
+                  ].map(m => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
+                </select>
+              </div>
               <button onClick={handleExportFees} className="prof-btn prof-btn-secondary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}><Download size={14} /> Export PDF</button>
             </div>
             <table className="prof-table">
               <thead><tr><th>Student</th><th>Total Fee</th><th>Paid</th><th>Mode/Date</th><th>Status</th><th>Actions</th></tr></thead>
               <tbody>
-                {classFees.map(fee => {
+                {classFees.filter(fee => fee.month === selectedMonth).map(fee => {
                   const s = classStudents.find(st => st.id === fee.studentId);
                   return (
                     <tr key={fee.id}>
@@ -166,7 +185,7 @@ const ClassDetails = () => {
                       <td style={{ display: 'flex', gap: '0.5rem' }}>
                         {fee.status !== 'Paid' && (
                           <>
-                            <button onClick={() => recordFeePayment(fee.studentId, fee.total - fee.paid, 'Cash', new Date().toLocaleDateString())} className="prof-btn prof-btn-secondary" style={{ color: 'var(--success)', borderColor: 'var(--success)', background: 'transparent', padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}>Mark Paid</button>
+                            <button onClick={() => recordFeePayment(fee.studentId, fee.total - fee.paid, 'Cash', new Date().toLocaleDateString(), selectedMonth)} className="prof-btn prof-btn-secondary" style={{ color: 'var(--success)', borderColor: 'var(--success)', background: 'transparent', padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}>Mark Paid</button>
                             <button onClick={() => handleSendReminder(fee)} className="prof-btn" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}>Send Reminder</button>
                           </>
                         )}
@@ -177,7 +196,7 @@ const ClassDetails = () => {
                     </tr>
                   )
                 })}
-                {classFees.length === 0 && <tr><td colSpan="5" style={{ textAlign: 'center', color: 'var(--text-muted)' }}>No fee records found.</td></tr>}
+                {classFees.filter(fee => fee.month === selectedMonth).length === 0 && <tr><td colSpan="6" style={{ textAlign: 'center', color: 'var(--text-muted)' }}>No fee records found for {selectedMonth}.</td></tr>}
               </tbody>
             </table>
           </div>

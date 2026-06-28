@@ -526,17 +526,31 @@ const sendRealSms = async (phone, message) => {
 // --- Auto SMS Helper ---
 const sendAutoSms = async (phone, message) => {
   if (!phone) return;
-  console.log(`[Auto-SMS] Dispatching to ${phone}...`);
-  const result = await sendRealSms(phone, message);
+  console.log(`[Auto-SMS] Dispatching to ${phone} via WhatsApp...`);
   
-  if (!result.success) {
-    console.log(`[Auto-SMS Fallback] Cellular SMS failed. Simulating via Ethereal Email...`);
+  let sentViaWa = false;
+  if (waStatus === 'CONNECTED' && waClient) {
+    try {
+      let rawPhone = phone.replace(/\D/g, '');
+      if (rawPhone.length === 10) rawPhone = `91${rawPhone}`;
+      const chatId = `${rawPhone}@c.us`;
+      await waClient.sendMessage(chatId, message);
+      console.log(`[Auto-SMS] Sent via WhatsApp to ${chatId}`);
+      sentViaWa = true;
+    } catch (e) {
+      console.error('[Auto-SMS] WhatsApp transmission failed:', e.message);
+    }
+  }
+
+  // If WhatsApp isn't connected or failed, fallback to simulated email log
+  if (!sentViaWa) {
+    console.log(`[Auto-SMS Fallback] WhatsApp offline. Simulating via Ethereal Email...`);
     if (transporter) {
       try {
         const info = await transporter.sendMail({
           from: '"Aarambh System" <admin@aarambh.edu>',
           to: 'parent@aarambh.edu',
-          subject: `Auto-SMS Fallback to ${phone}`,
+          subject: `Auto-WhatsApp Fallback to ${phone}`,
           text: message
         });
         console.log(`[Auto-SMS Simulated] Link: ${nodemailer.getTestMessageUrl(info)}`);
