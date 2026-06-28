@@ -4,21 +4,47 @@ import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 
 const Messages = () => {
-  const { messages, students, sendMessage } = useContext(AppContext);
-  const [recipient, setRecipient] = useState('');
+  const { messages, students, classes, sendMessage } = useContext(AppContext);
+  const [sendType, setSendType] = useState('student'); // 'student', 'batch', 'manual'
+  const [selectedStudent, setSelectedStudent] = useState('');
+  const [selectedBatch, setSelectedBatch] = useState('');
+  const [manualPhone, setManualPhone] = useState('');
   const [content, setContent] = useState('');
   const [channel, setChannel] = useState('SMS');
 
   const handleManualSend = (e) => {
     e.preventDefault();
-    if (!recipient || !content) return;
-    
-    // Check if recipient is a student name, map to phone
-    const student = students.find(s => s.name.toLowerCase().includes(recipient.toLowerCase()));
-    const targetPhone = student ? student.parentPhone : recipient;
+    if (!content) return;
 
-    sendMessage(targetPhone, channel, content);
-    setRecipient('');
+    if (sendType === 'student') {
+      const student = students.find(s => s.id === parseInt(selectedStudent));
+      if (student && student.parentPhone) {
+        sendMessage(student.parentPhone, channel, content);
+      }
+    } else if (sendType === 'batch') {
+      const batchClass = classes.find(c => c.id === parseInt(selectedBatch));
+      if (batchClass) {
+        const batchStudents = students.filter(s => s.class === batchClass.name);
+        if (batchStudents.length === 0) {
+          alert('No students found in this batch.');
+          return;
+        }
+        batchStudents.forEach(student => {
+          if (student.parentPhone) {
+            sendMessage(student.parentPhone, channel, content);
+          }
+        });
+      }
+    } else {
+      if (manualPhone) {
+        sendMessage(manualPhone, channel, content);
+      }
+    }
+
+    // Reset fields
+    setSelectedStudent('');
+    setSelectedBatch('');
+    setManualPhone('');
     setContent('');
   };
 
@@ -33,32 +59,99 @@ const Messages = () => {
           <div className="prof-card">
             <h2 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1.5rem', marginTop: 0 }}>Compose Message</h2>
             <form onSubmit={handleManualSend} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <input 
-                type="text" 
-                placeholder="Recipient (Student Name or Phone)" 
-                value={recipient}
-                onChange={(e) => setRecipient(e.target.value)}
-                required
-                className="prof-input"
-              />
-              <select 
-                value={channel} 
-                onChange={e => setChannel(e.target.value)}
-                className="prof-input"
-                required
-              >
-                <option value="SMS">SMS / Email Notification (Free)</option>
-                <option value="Auto-WhatsApp">Auto-WhatsApp Robot</option>
-              </select>
-              <textarea 
-                placeholder="Message Content..." 
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                required
-                rows="5"
-                className="prof-input"
-                style={{ resize: 'vertical' }}
-              />
+              
+              <div>
+                <label className="prof-label" style={{ marginBottom: '0.5rem', display: 'block' }}>Send To</label>
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
+                    <input type="radio" checked={sendType === 'student'} onChange={() => setSendType('student')} />
+                    Student
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
+                    <input type="radio" checked={sendType === 'batch'} onChange={() => setSendType('batch')} />
+                    Batch
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
+                    <input type="radio" checked={sendType === 'manual'} onChange={() => setSendType('manual')} />
+                    Manual Number
+                  </label>
+                </div>
+              </div>
+
+              {sendType === 'student' && (
+                <div>
+                  <label className="prof-label">Select Student</label>
+                  <select 
+                    value={selectedStudent} 
+                    onChange={e => setSelectedStudent(e.target.value)}
+                    className="prof-input"
+                    required
+                  >
+                    <option value="">-- Select Student --</option>
+                    {students.map(s => (
+                      <option key={s.id} value={s.id}>{s.name} ({s.class || 'No Class'}) - {s.parentPhone}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {sendType === 'batch' && (
+                <div>
+                  <label className="prof-label">Select Batch</label>
+                  <select 
+                    value={selectedBatch} 
+                    onChange={e => setSelectedBatch(e.target.value)}
+                    className="prof-input"
+                    required
+                  >
+                    <option value="">-- Select Batch --</option>
+                    {classes.map(c => (
+                      <option key={c.id} value={c.id}>{c.name} ({c.grade})</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {sendType === 'manual' && (
+                <div>
+                  <label className="prof-label">Phone Number</label>
+                  <input 
+                    type="text" 
+                    placeholder="Recipient Phone Number (e.g. 9876543210)" 
+                    value={manualPhone}
+                    onChange={(e) => setManualPhone(e.target.value)}
+                    required
+                    className="prof-input"
+                  />
+                </div>
+              )}
+
+              <div>
+                <label className="prof-label">Messaging Service</label>
+                <select 
+                  value={channel} 
+                  onChange={e => setChannel(e.target.value)}
+                  className="prof-input"
+                  required
+                >
+                  <option value="SMS">Cellular SMS (Twilio/TextBelt)</option>
+                  <option value="Auto-WhatsApp">Auto-WhatsApp Robot</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="prof-label">Message Content</label>
+                <textarea 
+                  placeholder="Type your message here..." 
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  required
+                  rows="5"
+                  className="prof-input"
+                  style={{ resize: 'vertical' }}
+                />
+              </div>
+
               <button type="submit" className="prof-btn" style={{ alignSelf: 'flex-start' }}>Send Message</button>
             </form>
           </div>
@@ -91,23 +184,12 @@ const Messages = () => {
                           </a>
                         )}
                       </div>
-                      
-                      <a 
-                        href={`https://wa.me/${msg.recipient.replace(/\D/g,'')}?text=${encodeURIComponent(msg.content)}`} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="prof-btn prof-btn-outline" 
-                        style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem', borderColor: '#25D366', color: '#25D366' }}
-                      >
-                        Send via WhatsApp
-                      </a>
                     </div>
                   </div>
                 ))
               )}
             </div>
           </div>
-
         </div>
       </main>
     </>

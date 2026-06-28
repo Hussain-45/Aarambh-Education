@@ -335,7 +335,7 @@ app.post('/api/classes', authenticateToken, (req, res) => {
 // Delete a class (Admin only)
 app.delete('/api/classes/:id', authenticateToken, (req, res) => {
   if (req.user.role !== 'admin') return res.sendStatus(403);
-  const classId = req.params.id;
+  const classId = parseInt(req.params.id);
   db.get(`SELECT name FROM classes WHERE id = ?`, [classId], (err, row) => {
     if (err || !row) return res.status(404).json({ error: 'Class not found' });
     db.run(`DELETE FROM classes WHERE id = ?`, [classId], function(err) {

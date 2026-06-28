@@ -207,7 +207,7 @@ export const AppProvider = ({ children }) => {
         method: 'DELETE', headers: authHeaders
       });
       if (res.ok) {
-        setClasses(classes.filter(c => c.id !== batchId));
+        setClasses(prev => prev.filter(c => c.id !== parseInt(batchId)));
         addToast('Batch deleted successfully', 'success');
         return true;
       }
