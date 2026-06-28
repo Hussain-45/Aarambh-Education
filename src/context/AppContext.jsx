@@ -243,20 +243,28 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  const recordFeePayment = async (studentId, amount) => {
+  const recordFeePayment = async (studentId, amount, paymentMode = 'Cash', paymentDate = new Date().toLocaleDateString(), month = null) => {
     try {
       const res = await fetch(`${API_URL}/fees/${studentId}/pay`, {
         method: 'PUT', headers: authHeaders,
-        body: JSON.stringify({ amount })
+        body: JSON.stringify({ amount, paymentMode, paymentDate, month })
       });
       if (res.ok) {
         const data = await res.json();
         setFees(prev => prev.map(f => {
-          if (f.studentId === studentId) return { ...f, paid: data.paid, status: data.status };
+          if (month) {
+            if (f.studentId === studentId && f.month === month) {
+              return { ...f, paid: data.paid, status: data.status, paymentMode: data.paymentMode, paymentDate: data.paymentDate };
+            }
+          } else {
+            if (f.studentId === studentId) {
+              return { ...f, paid: data.paid, status: data.status, paymentMode: data.paymentMode, paymentDate: data.paymentDate };
+            }
+          }
           return f;
         }));
         const student = students.find(s => s.id === studentId);
-        if (student) sendMessage(student.parentPhone, 'SMS', `Payment of Rs.${amount} received. Thank you!`);
+        if (student) sendMessage(student.parentPhone, 'SMS', `Payment of Rs.${amount} received for ${month || 'Current Month'}. Thank you!`);
       }
     } catch (e) {
       console.error(e);

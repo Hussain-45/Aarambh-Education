@@ -160,59 +160,61 @@ const Settings = () => {
         <div style={{ maxWidth: '800px', margin: '0 auto', paddingBottom: '2rem' }}>
           <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '2rem' }}>Account Settings</h2>
 
-          <div className="prof-card" style={{ marginBottom: '2rem' }}>
-            <h3 style={{ margin: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Cloud size={18} /> WhatsApp Robot (Auto-Messaging)
-            </h3>
-            
-            <div style={{ padding: '1.5rem', background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '1rem' }}>
+          {loggedInUser?.role === 'admin' && (
+            <div className="prof-card" style={{ marginBottom: '2rem' }}>
+              <h3 style={{ margin: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Cloud size={18} /> WhatsApp Robot (Auto-Messaging)
+              </h3>
               
-              {isExternalDeployment && (
-                <div style={{ padding: '1rem', background: 'rgba(220, 38, 38, 0.1)', border: '1px solid var(--danger)', borderRadius: '8px', color: 'var(--danger)', fontSize: '0.85rem', width: '100%', maxWidth: '500px', marginBottom: '1rem' }}>
-                  <strong>Security Notice:</strong> You are viewing this page over a secure HTTPS connection (GitHub Pages). Browser security blocks connections to local backend servers (HTTP) from here. 
-                  <br/><br/>
-                  To link your WhatsApp and view status, please open the local address:
-                  <br/>
-                  <a href="http://localhost:5173/Aarambh-/settings" style={{ color: 'var(--danger)', fontWeight: 600, textDecoration: 'underline' }}>http://localhost:5173/Aarambh-/settings</a>
-                </div>
-              )}
-
-              {waStatus === 'LOADING' || waStatus === 'INITIALIZING' ? (
-                <div style={{ padding: '1rem', color: 'var(--text-muted)' }}>
-                  <Loader className="spin" size={32} style={{ marginBottom: '1rem' }} />
-                  <p>Booting up WhatsApp Robot on Server...</p>
-                </div>
-              ) : waStatus === 'AWAITING_SCAN' && waQr ? (
-                <div>
-                  <h4 style={{ margin: '0 0 1rem 0' }}>Link your WhatsApp</h4>
-                  <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1rem', maxWidth: '400px', textAlign: 'left' }}>
-                    1. Open WhatsApp on your phone.<br/>
-                    2. Tap Menu or Settings and select <strong>Linked Devices</strong>.<br/>
-                    3. Tap on <strong>Link a Device</strong>.<br/>
-                    4. Point your phone to this screen to capture the code.
-                  </p>
-                  <img src={waQr} alt="WhatsApp QR Code" style={{ border: '4px solid white', borderRadius: '8px', maxWidth: '250px', display: 'block', margin: '0 auto 1rem auto' }} />
-                  <button onClick={handleRestartWhatsApp} className="prof-btn prof-btn-secondary" style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}>Regenerate QR Code</button>
-                </div>
-              ) : waStatus === 'CONNECTED' ? (
-                <div style={{ padding: '1rem', color: 'var(--success)' }}>
-                  <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: '#25D366', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem auto' }}>
-                    <MonitorSmartphone size={32} />
+              <div style={{ padding: '1.5rem', background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '1rem' }}>
+                
+                {isExternalDeployment && (
+                  <div style={{ padding: '1rem', background: 'rgba(220, 38, 38, 0.1)', border: '1px solid var(--danger)', borderRadius: '8px', color: 'var(--danger)', fontSize: '0.85rem', width: '100%', maxWidth: '500px', marginBottom: '1rem' }}>
+                    <strong>Security Notice:</strong> You are viewing this page over a secure HTTPS connection (GitHub Pages). Browser security blocks connections to local backend servers (HTTP) from here. 
+                    <br/><br/>
+                    To link your WhatsApp and view status, please open the local address:
+                    <br/>
+                    <a href="http://localhost:5173/Aarambh-/settings" style={{ color: 'var(--danger)', fontWeight: 600, textDecoration: 'underline' }}>http://localhost:5173/Aarambh-/settings</a>
                   </div>
-                  <h4 style={{ margin: 0, color: '#25D366' }}>WhatsApp Robot Connected!</h4>
-                  <p style={{ margin: '0.5rem 0 1rem 0', fontSize: '0.85rem', color: 'var(--text-main)' }}>The system will now automatically send background messages via your WhatsApp account.</p>
-                  <button onClick={handleRestartWhatsApp} className="prof-btn prof-btn-secondary" style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem', color: 'var(--danger)', borderColor: 'var(--danger)' }}>Disconnect Robot</button>
-                </div>
-              ) : (
-                <div style={{ padding: '1rem' }}>
-                  <p style={{ color: 'var(--text-muted)', marginBottom: '1rem' }}>WhatsApp Robot is currently offline or failed to initialize.</p>
-                  <button onClick={handleRestartWhatsApp} className="prof-btn" style={{ fontSize: '0.85rem' }}>
-                    Link WhatsApp Device
-                  </button>
-                </div>
-              )}
+                )}
+
+                {waStatus === 'LOADING' || waStatus === 'INITIALIZING' ? (
+                  <div style={{ padding: '1rem', color: 'var(--text-muted)' }}>
+                    <Loader className="spin" size={32} style={{ marginBottom: '1rem' }} />
+                    <p>Booting up WhatsApp Robot on Server...</p>
+                  </div>
+                ) : waStatus === 'AWAITING_SCAN' && waQr ? (
+                  <div>
+                    <h4 style={{ margin: '0 0 1rem 0' }}>Link your WhatsApp</h4>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1rem', maxWidth: '400px', textAlign: 'left' }}>
+                      1. Open WhatsApp on your phone.<br/>
+                      2. Tap Menu or Settings and select <strong>Linked Devices</strong>.<br/>
+                      3. Tap on <strong>Link a Device</strong>.<br/>
+                      4. Point your phone to this screen to capture the code.
+                    </p>
+                    <img src={waQr} alt="WhatsApp QR Code" style={{ border: '4px solid white', borderRadius: '8px', maxWidth: '250px', display: 'block', margin: '0 auto 1rem auto' }} />
+                    <button onClick={handleRestartWhatsApp} className="prof-btn prof-btn-secondary" style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}>Regenerate QR Code</button>
+                  </div>
+                ) : waStatus === 'CONNECTED' ? (
+                  <div style={{ padding: '1rem', color: 'var(--success)' }}>
+                    <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: '#25D366', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem auto' }}>
+                      <MonitorSmartphone size={32} />
+                    </div>
+                    <h4 style={{ margin: 0, color: '#25D366' }}>WhatsApp Robot Connected!</h4>
+                    <p style={{ margin: '0.5rem 0 1rem 0', fontSize: '0.85rem', color: 'var(--text-main)' }}>The system will now automatically send background messages via your WhatsApp account.</p>
+                    <button onClick={handleRestartWhatsApp} className="prof-btn prof-btn-secondary" style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem', color: 'var(--danger)', borderColor: 'var(--danger)' }}>Disconnect Robot</button>
+                  </div>
+                ) : (
+                  <div style={{ padding: '1rem' }}>
+                    <p style={{ color: 'var(--text-muted)', marginBottom: '1rem' }}>WhatsApp Robot is currently offline or failed to initialize.</p>
+                    <button onClick={handleRestartWhatsApp} className="prof-btn" style={{ fontSize: '0.85rem' }}>
+                      Link WhatsApp Device
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="prof-card" style={{ marginBottom: '2rem' }}>
             <h3 style={{ margin: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>

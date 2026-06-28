@@ -56,8 +56,14 @@ const db = new sqlite3.Database(dbPath, (err) => {
         paid INTEGER DEFAULT 0,
         status TEXT DEFAULT 'Pending',
         due_date TEXT,
+        month TEXT,
         FOREIGN KEY(student_id) REFERENCES users(id)
       )`);
+
+      // Migration: Add month column if not exists
+      db.run(`ALTER TABLE fees ADD COLUMN month TEXT`, (err) => {
+        // Ignore error if column already exists
+      });
 
       // Attendance Table
       db.run(`CREATE TABLE IF NOT EXISTS attendance (

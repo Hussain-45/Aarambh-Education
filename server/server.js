@@ -296,9 +296,20 @@ app.post('/api/admin/requests/:id/approve', authenticateToken, (req, res) => {
           if (err) return res.status(500).json({ error: err.message });
           const newUserId = this.lastID;
           
-          // If student, create fee record
+          // If student, create fee records for all 12 months (Jan to Dec)
           if (request.role === 'student') {
-            db.run(`INSERT INTO fees (student_id, total, paid, status, due_date) VALUES (?, ?, 0, 'Pending', '2024-01-01')`, [newUserId, request.fees || 5000]);
+            const monthsList = [
+              'January', 'February', 'March', 'April', 'May', 'June', 
+              'July', 'August', 'September', 'October', 'November', 'December'
+            ];
+            const yearlyTotal = request.fees || 12000;
+            const monthlyFee = Math.round(yearlyTotal / 12);
+            monthsList.forEach((m, idx) => {
+              const monthNum = String(idx + 1).padStart(2, '0');
+              const dueDate = `2024-${monthNum}-10`; // e.g. 10th of each month
+              db.run(`INSERT INTO fees (student_id, total, paid, status, due_date, month) VALUES (?, ?, 0, 'Pending', ?, ?)`, 
+                [newUserId, monthlyFee, dueDate, m]);
+            });
           }
           
           // Mark request as approved (or delete it)
@@ -389,8 +400,18 @@ app.post('/api/students', authenticateToken, async (req, res) => {
       function(err) {
         if (err) return res.status(500).json({ error: err.message });
         const newUserId = this.lastID;
-        // Create initial fee record for student
-        db.run(`INSERT INTO fees (student_id, total, paid, status, due_date) VALUES (?, 5000, 0, 'Pending', '2024-01-01')`, [newUserId]);
+        // Create initial fee records for student (Jan to Dec)
+        const monthsList = [
+          'January', 'February', 'March', 'April', 'May', 'June', 
+          'July', 'August', 'September', 'October', 'November', 'December'
+        ];
+        const monthlyFee = 1000; // standard default monthly fee
+        monthsList.forEach((m, idx) => {
+          const monthNum = String(idx + 1).padStart(2, '0');
+          const dueDate = `2024-${monthNum}-10`;
+          db.run(`INSERT INTO fees (student_id, total, paid, status, due_date, month) VALUES (?, ?, 0, 'Pending', ?, ?)`, 
+            [newUserId, monthlyFee, dueDate, m]);
+        });
         
         logAction('STUDENT_ADDED', `Admin added new student: ${formattedName} to class ${className}`);
         
@@ -444,7 +465,7 @@ app.get('/api/fees', authenticateToken, (req, res) => {
     // mapping db snake_case to frontend camelCase
     const mapped = rows.map(r => ({
       id: r.id, studentId: r.student_id, total: r.total, paid: r.paid, status: r.status, dueDate: r.due_date,
-      paymentMode: r.payment_mode, paymentDate: r.payment_date
+      paymentMode: r.payment_mode, paymentDate: r.payment_date, month: r.month
     }));
     res.json(mapped);
   });
@@ -530,25 +551,35 @@ const sendAutoSms = async (phone, message) => {
 // -----------------------
 
 app.put('/api/fees/:id/pay', authenticateToken, (req, res) => {
-  if (req.user.role !== 'admin') return res.sendStatus(403);
   const studentId = parseInt(req.params.id);
-  const { amount, paymentMode, paymentDate } = req.body;
+  if (req.user.role !== 'admin' && req.user.id !== studentId) return res.sendStatus(403);
+  const { amount, paymentMode, paymentDate, month } = req.body;
   
-  db.get(`SELECT fees.*, users.name, users.parentPhone FROM fees JOIN users ON fees.student_id = users.id WHERE fees.student_id = ?`, [studentId], (err, fee) => {
+  const query = month 
+    ? `SELECT fees.*, users.name, users.parentPhone FROM fees JOIN users ON fees.student_id = users.id WHERE fees.student_id = ? AND fees.month = ?`
+    : `SELECT fees.*, users.name, users.parentPhone FROM fees JOIN users ON fees.student_id = users.id WHERE fees.student_id = ?`;
+  const params = month ? [studentId, month] : [studentId];
+  
+  db.get(query, params, (err, fee) => {
     if (err || !fee) return res.status(404).json({ error: 'Fee record not found' });
     
     const newPaid = fee.paid + amount;
     const newStatus = newPaid >= fee.total ? 'Paid' : 'Pending';
     
-    db.run(`UPDATE fees SET paid = ?, status = ?, payment_mode = ?, payment_date = ? WHERE student_id = ?`, 
-      [newPaid, newStatus, paymentMode || 'Cash', paymentDate || new Date().toLocaleDateString(), studentId], 
-      (err) => {
+    const updateQuery = month
+      ? `UPDATE fees SET paid = ?, status = ?, payment_mode = ?, payment_date = ? WHERE student_id = ? AND month = ?`
+      : `UPDATE fees SET paid = ?, status = ?, payment_mode = ?, payment_date = ? WHERE student_id = ?`;
+    const updateParams = month
+      ? [newPaid, newStatus, paymentMode || 'Cash', paymentDate || new Date().toLocaleDateString(), studentId, month]
+      : [newPaid, newStatus, paymentMode || 'Cash', paymentDate || new Date().toLocaleDateString(), studentId];
+
+    db.run(updateQuery, updateParams, (err) => {
       if (err) return res.status(500).json({ error: err.message });
       
-      logAction('FEE_PAID', `Recorded fee payment of Rs. ${amount} for student ID ${studentId}. Mode: ${paymentMode || 'Cash'}, Status: ${newStatus}`);
+      logAction('FEE_PAID', `Recorded fee payment of Rs. ${amount} for student ID ${studentId}${month ? ` (${month})` : ''}. Mode: ${paymentMode || 'Cash'}, Status: ${newStatus}`);
       
       if (fee.parentPhone) {
-        sendAutoSms(fee.parentPhone, `Dear Parent, we have received a payment of Rs. ${amount} for ${fee.name}. Thank you! - Aarambh`);
+        sendAutoSms(fee.parentPhone, `Dear Parent, we have received a payment of Rs. ${amount} for ${fee.name} for the month of ${month || 'Current'}. Thank you! - Aarambh`);
       }
       
       res.json({ success: true, paid: newPaid, status: newStatus, paymentMode, paymentDate });

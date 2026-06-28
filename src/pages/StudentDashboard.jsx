@@ -5,13 +5,24 @@ import { Sun, Moon, IndianRupee, FileText, Download } from 'lucide-react';
 import { exportToPDF } from '../utils/exportUtils';
 
 const StudentDashboard = () => {
-  const { loggedInUser, theme, setTheme, fees, assignments, submissions, library } = useContext(AppContext);
+  const { loggedInUser, theme, setTheme, fees, assignments, submissions, library, recordFeePayment } = useContext(AppContext);
   
   if (!loggedInUser) return null;
 
   const toggleTheme = () => setTheme(theme === 'light' ? 'dark' : 'light');
 
-  const myFee = fees.find(f => f.studentId === loggedInUser.id);
+  const monthsOrder = [
+    'January', 'February', 'March', 'April', 'May', 'June', 
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+  
+  const myFeesList = fees.filter(f => f.studentId === loggedInUser.id);
+  const sortedFees = [...myFeesList].sort((a, b) => monthsOrder.indexOf(a.month) - monthsOrder.indexOf(b.month));
+
+  const totalAssigned = myFeesList.reduce((sum, f) => sum + f.total, 0);
+  const totalPaid = myFeesList.reduce((sum, f) => sum + f.paid, 0);
+  const totalPending = totalAssigned - totalPaid;
+
   const mySubmissions = submissions.filter(s => s.studentId === loggedInUser.id);
   const myAssignments = assignments.filter(a => a.subject === loggedInUser.class);
   const myLibrary = library.filter(l => l.subject === loggedInUser.class);
@@ -22,6 +33,30 @@ const StudentDashboard = () => {
       return [a.title, a.subject, sub?.grade || 'Not Graded'];
     });
     exportToPDF('My Report Card', 'report_card', rows, ['Assignment', 'Subject', 'Grade']);
+  };
+
+  const handleDownloadReceipt = (fee) => {
+    const rows = [
+      ['Student Name', loggedInUser.name],
+      ['Admission No.', loggedInUser.admission_number || 'N/A'],
+      ['Class/Batch', loggedInUser.class],
+      ['Month Paid', fee.month],
+      ['Total Fee', `Rs. ${fee.total}`],
+      ['Amount Paid', `Rs. ${fee.paid}`],
+      ['Payment Mode', fee.paymentMode || 'Online Mock Gateway'],
+      ['Payment Date', fee.paymentDate || new Date().toLocaleDateString()]
+    ];
+    exportToPDF(`Fee_Receipt_${fee.month}_${loggedInUser.name}`, `Fee Payment Receipt`, rows, ['Receipt Item', 'Details']);
+  };
+
+  const handleMockPay = async (fee) => {
+    const amount = fee.total - fee.paid;
+    // Simulate a secure payment loading state
+    const confirmPay = window.confirm(`Simulate payment of Rs. ${amount} for the month of ${fee.month}?`);
+    if (confirmPay) {
+      await recordFeePayment(loggedInUser.id, amount, 'Online Mock Gateway', new Date().toLocaleDateString(), fee.month);
+      alert(`Payment of Rs. ${amount} for ${fee.month} received successfully!`);
+    }
   };
 
   return (
@@ -40,37 +75,67 @@ const StudentDashboard = () => {
           </div>
         </header>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem', marginBottom: '2rem' }}>
           
           <div className="prof-card">
             <div className="flex-between" style={{ marginBottom: '1.5rem' }}>
               <h2 style={{ fontSize: '1.1rem', fontWeight: 600, margin: 0 }} className="flex-center gap-1">
-                <IndianRupee size={18} /> My Fees
+                <IndianRupee size={18} /> My Monthly Fees & Receipts (Jan to Dec)
               </h2>
-              <span className={`badge badge-${myFee?.status === 'Paid' ? 'success' : 'danger'}`}>
-                {myFee?.status || 'Unknown'}
-              </span>
-            </div>
-            <div style={{ marginBottom: '1rem' }}>
-              <div className="flex-between" style={{ marginBottom: '0.5rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                <span>Total Fee:</span> 
-                <span style={{ color: 'var(--text-main)' }}>Rs. {myFee?.total || 0}</span>
-              </div>
-              <div className="flex-between" style={{ marginBottom: '0.5rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                <span>Paid Amount:</span> 
-                <span style={{ color: 'var(--text-main)' }}>Rs. {myFee?.paid || 0}</span>
+              <div style={{ display: 'flex', gap: '1.5rem', fontSize: '0.85rem' }}>
+                <div><span style={{ color: 'var(--text-muted)' }}>Total Assigned:</span> <strong>Rs. {totalAssigned}</strong></div>
+                <div><span style={{ color: 'var(--success)' }}>Total Paid:</span> <strong>Rs. {totalPaid}</strong></div>
+                <div><span style={{ color: 'var(--danger)' }}>Total Pending:</span> <strong>Rs. {totalPending}</strong></div>
               </div>
             </div>
-            {myFee && myFee.status !== 'Paid' && (
-              <button onClick={() => {
-                const amount = myFee.total - myFee.paid;
-                // Add a mock simulated payment delay
-                setTimeout(() => {
-                  alert(`Payment of Rs. ${amount} successful via Mock Gateway.`);
-                  // Reload or let them see the toast
-                }, 800);
-              }} className="prof-btn" style={{ width: '100%' }}>Pay Balance (Rs. {myFee.total - myFee.paid})</button>
-            )}
+            
+            <div style={{ overflowX: 'auto' }}>
+              <table className="prof-table">
+                <thead>
+                  <tr>
+                    <th>Month</th>
+                    <th>Due Date</th>
+                    <th>Total Fee</th>
+                    <th>Paid</th>
+                    <th>Status</th>
+                    <th>Payment Details</th>
+                    <th style={{ textAlign: 'right' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sortedFees.map(fee => (
+                    <tr key={fee.id}>
+                      <td style={{ fontWeight: 600 }}>{fee.month}</td>
+                      <td style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{fee.dueDate}</td>
+                      <td>Rs. {fee.total}</td>
+                      <td>Rs. {fee.paid}</td>
+                      <td>
+                        <span className={`badge badge-${fee.status === 'Paid' ? 'success' : 'danger'}`}>
+                          {fee.status}
+                        </span>
+                      </td>
+                      <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                        {fee.paymentMode ? `${fee.paymentMode} (${fee.paymentDate})` : '—'}
+                      </td>
+                      <td style={{ textAlign: 'right' }}>
+                        {fee.status !== 'Paid' ? (
+                          <button onClick={() => handleMockPay(fee)} className="prof-btn" style={{ padding: '0.3rem 0.8rem', fontSize: '0.8rem' }}>
+                            Pay Month
+                          </button>
+                        ) : (
+                          <button onClick={() => handleDownloadReceipt(fee)} className="prof-btn prof-btn-secondary" style={{ padding: '0.3rem 0.8rem', fontSize: '0.8rem' }}>
+                            Receipt PDF
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                  {sortedFees.length === 0 && (
+                    <tr><td colSpan="7" style={{ textAlign: 'center', color: 'var(--text-muted)' }}>No monthly fees mapped.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
 
           <div className="prof-card">
