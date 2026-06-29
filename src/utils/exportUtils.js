@@ -1,5 +1,5 @@
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 export const exportToCSV = (filename, rows, headers) => {
   const csvContent = [
@@ -24,7 +24,7 @@ export const exportToPDF = (title, filename, rows, headers) => {
   doc.setFontSize(18);
   doc.text(title, 14, 22);
   
-  doc.autoTable({
+  autoTable(doc, {
     startY: 30,
     head: [headers],
     body: rows,

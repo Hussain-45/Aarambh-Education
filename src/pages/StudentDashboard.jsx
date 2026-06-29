@@ -204,9 +204,7 @@ const StudentDashboard = () => {
                         </td>
                         <td style={{ textAlign: 'right' }}>
                           {fee.status !== 'Paid' ? (
-                            <button onClick={() => handleMockPay(fee)} className="prof-btn" style={{ padding: '0.35rem 0.8rem', fontSize: '0.8rem' }}>
-                              Pay Now
-                            </button>
+                            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>Pending Payment</span>
                           ) : (
                             <button onClick={() => handleDownloadReceipt(fee)} className="prof-btn prof-btn-secondary" style={{ padding: '0.35rem 0.8rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                               <Download size={12} /> Receipt

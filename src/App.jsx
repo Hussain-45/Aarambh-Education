@@ -21,7 +21,6 @@ import History from './pages/History';
 import ProfitLoss from './pages/ProfitLoss';
 import { AppProvider, AppContext } from './context/AppContext';
 import ToastContainer from './components/Toast';
-import Chatbot from './components/Chatbot';
 
 // Admin Protected Route
 const AdminRoute = ({ children }) => {
@@ -64,7 +63,6 @@ const AppLayout = () => {
   return (
     <div className="app-container">
       <ToastContainer />
-      <Chatbot />
       <Routes>
         <Route path="/login" element={
           isAuthenticated 
