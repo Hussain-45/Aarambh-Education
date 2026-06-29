@@ -287,17 +287,19 @@ const Login = () => {
           </button>
         </form>
 
-        <div style={{ marginTop: '1.5rem', width: '100%', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-          <div style={{ width: '100%', height: '1px', background: 'var(--border-color)', margin: '0.5rem 0' }}></div>
-          <button 
-            type="button"
-            onClick={() => { setIsRegisterMode(!isRegisterMode); setError(''); }} 
-            className="prof-btn prof-btn-secondary"
-            style={{ width: '100%', background: 'transparent', color: 'var(--primary-text)', fontWeight: 600, border: '2px solid var(--primary-text)' }}
-          >
-            {isRegisterMode ? '← Back to Login' : 'Request New Account Registration'}
-          </button>
-        </div>
+        {activeTab !== 'admin' && (
+          <div style={{ marginTop: '1.5rem', width: '100%', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+            <div style={{ width: '100%', height: '1px', background: 'var(--border-color)', margin: '0.5rem 0' }}></div>
+            <button 
+              type="button"
+              onClick={() => { setIsRegisterMode(!isRegisterMode); setError(''); }} 
+              className="prof-btn prof-btn-secondary"
+              style={{ width: '100%', background: 'transparent', color: 'var(--primary-text)', fontWeight: 600, border: '2px solid var(--primary-text)' }}
+            >
+              {isRegisterMode ? '← Back to Login' : 'Request New Account Registration'}
+            </button>
+          </div>
+        )}
 
         {!isRegisterMode && activeTab === 'student' && (
           <div style={{ marginTop: '1.5rem', color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center' }}>
@@ -306,10 +308,15 @@ const Login = () => {
         )}
         {!isRegisterMode && activeTab === 'teacher' && (
           <div style={{ marginTop: '1.5rem', color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center' }}>
-            Staff login. Example: 'gupta' / '123'
+            Staff login. Username: <strong>teacher</strong> &bull; Password: <strong>1526</strong>
           </div>
         )}
         
+        {/* Version tracker to verify browser cache clearing */}
+        <div style={{ marginTop: '2rem', fontSize: '0.75rem', color: 'var(--text-muted)', opacity: 0.7 }}>
+          Version 1.0.6 (Latest Live Update)
+        </div>
+
         <style>{`@keyframes spin { 100% { transform: rotate(360deg); } }`}</style>
       </div>
     </div>
