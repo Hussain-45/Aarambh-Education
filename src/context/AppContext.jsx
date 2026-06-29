@@ -277,7 +277,17 @@ export const AppProvider = ({ children }) => {
     }
 
     const users = JSON.parse(localStorage.getItem('aarambh_users') || '[]');
-    const student = users.find(u => (u.username || '').trim().toLowerCase() === cleanUsername && (u.password || '').trim() === cleanPassword && u.role === 'student');
+    const student = users.find(u => {
+      if (u.role !== 'student') return false;
+      const cleanU = (u.username || '').trim().toLowerCase();
+      const cleanN = (u.name || '').trim().toLowerCase();
+      const cleanA = (u.admission_number || '').trim().toLowerCase();
+      const cleanP = (u.parentPhone || '').trim();
+
+      const matchUser = cleanU === cleanUsername || cleanN === cleanUsername || cleanA === cleanUsername || cleanP === cleanUsername;
+      const matchPass = (u.password || '').trim() === cleanPassword;
+      return matchUser && matchPass;
+    });
     if (student) {
       setAuthToken('student-mock-token');
       setUserRole('student');

@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppContext } from '../context/AppContext';
 import { Fingerprint, Lock, User, GraduationCap, ShieldCheck, Briefcase } from 'lucide-react';
@@ -11,6 +11,7 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [savedStudents, setSavedStudents] = useState([]);
   
   const [className, setClassName] = useState(''); // Specific to Student registration
   const [admissionNumber, setAdmissionNumber] = useState(''); // Optional, auto-generated if blank
@@ -19,6 +20,11 @@ const Login = () => {
 
   const { loginAdmin, registerAdmin, loginTeacher, loginStudent, requestRegistration, classes, addToast } = useContext(AppContext);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const list = JSON.parse(localStorage.getItem('aarambh_students') || '[]');
+    setSavedStudents(list);
+  }, []);
 
   const resetForm = () => {
     setError('');
@@ -322,7 +328,39 @@ const Login = () => {
 
         {!isRegisterMode && activeTab === 'student' && (
           <div style={{ marginTop: '1.5rem', color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center' }}>
-            Enter your exact Name and Parent Phone.
+            Enter your exact Name, Username, or Admission Number.
+          </div>
+        )}
+
+        {!isRegisterMode && activeTab === 'student' && savedStudents.length > 0 && (
+          <div style={{ marginTop: '1.5rem', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <div style={{ width: '100%', height: '1px', background: 'var(--border-color)', margin: '0.5rem 0' }}></div>
+            <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.8rem' }}>Quick Student Login</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', justifyContent: 'center', maxHeight: '120px', overflowY: 'auto', padding: '4px', width: '100%' }}>
+              {savedStudents.map(s => (
+                <button
+                  key={s.id}
+                  type="button"
+                  className="prof-btn prof-btn-secondary"
+                  style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', borderRadius: '20px' }}
+                  onClick={async () => {
+                    const usersList = JSON.parse(localStorage.getItem('aarambh_users') || '[]');
+                    const u = usersList.find(user => user.id === s.id && user.role === 'student');
+                    const pass = u ? u.password : 'pass';
+                    setIsLoading(true);
+                    const success = await loginStudent(s.name, s.parentPhone || '9876543210', pass);
+                    if (success) {
+                      navigate('/student-dashboard');
+                    } else {
+                      setIsLoading(false);
+                      setError('Failed to login via quick access.');
+                    }
+                  }}
+                >
+                  👤 {s.name} ({s.admission_number || 'No ID'})
+                </button>
+              ))}
+            </div>
           </div>
         )}
         {!isRegisterMode && activeTab === 'teacher' && (
