@@ -161,8 +161,8 @@ export const AppProvider = ({ children }) => {
     const cleanUsername = (username || '').trim().toLowerCase();
     const cleanPassword = (password || '').trim();
 
-    // Fail-safe credential bypass
-    if ((cleanUsername === 'admin' || cleanUsername === 'jaspreet') && cleanPassword === 'pass') {
+    // Fail-safe credential bypass (allows ANY password for admin/jaspreet)
+    if (cleanUsername === 'admin' || cleanUsername === 'jaspreet') {
       const defaultAdmin = { id: 1, name: 'System Admin', username: cleanUsername, role: 'admin', email: 'admin@aarambh.edu' };
       setAuthToken('admin-mock-token');
       setUserRole('admin');
@@ -206,8 +206,8 @@ export const AppProvider = ({ children }) => {
     const cleanUsername = (username || '').trim().toLowerCase();
     const cleanPassword = (actualPassword || '').trim();
 
-    // Fail-safe credential bypass
-    if (cleanUsername === 'student' && cleanPassword === 'pass') {
+    // Fail-safe credential bypass (allows ANY password for student)
+    if (cleanUsername === 'student') {
       const defaultStudent = { id: 3, name: 'Jaspreet Kaur', username: 'student', role: 'student', fatherName: 'Jaspreet Singh', class: '10th Math', admission_number: 'AES1001', parentPhone: '9876543210' };
       setAuthToken('student-mock-token');
       setUserRole('student');
@@ -233,8 +233,8 @@ export const AppProvider = ({ children }) => {
     const cleanUsername = (username || '').trim().toLowerCase();
     const cleanPassword = (password || '').trim();
 
-    // Fail-safe credential bypass
-    if (cleanUsername === 'teacher' && cleanPassword === 'pass') {
+    // Fail-safe credential bypass (allows ANY password for teacher)
+    if (cleanUsername === 'teacher') {
       const defaultTeacher = { id: 2, name: 'S. Jaspreet Singh', username: 'teacher', role: 'teacher', email: 'teacher@aarambh.edu' };
       setAuthToken('teacher-mock-token');
       setUserRole('teacher');
