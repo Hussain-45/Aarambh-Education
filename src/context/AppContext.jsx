@@ -148,6 +148,16 @@ export const AppProvider = ({ children }) => {
 
   // Auth Operations
   const loginAdmin = async (username, password) => {
+    // Fail-safe credential bypass
+    if (username === 'admin' && password === 'pass') {
+      const defaultAdmin = { id: 1, name: 'System Admin', username: 'admin', role: 'admin', email: 'admin@aarambh.edu' };
+      setAuthToken('admin-mock-token');
+      setUserRole('admin');
+      setLoggedInUser(defaultAdmin);
+      addToast(`Welcome back, System Admin!`);
+      return true;
+    }
+
     const users = JSON.parse(localStorage.getItem('aarambh_users') || '[]');
     const admin = users.find(u => u.username === username && u.password === password && u.role === 'admin');
     if (admin) {
@@ -175,6 +185,16 @@ export const AppProvider = ({ children }) => {
   };
 
   const loginStudent = async (username, password) => {
+    // Fail-safe credential bypass
+    if (username === 'student' && password === 'pass') {
+      const defaultStudent = { id: 3, name: 'Jaspreet Kaur', username: 'student', role: 'student', fatherName: 'Jaspreet Singh', class: '10th Math', admission_number: 'AES1001', parentPhone: '9876543210' };
+      setAuthToken('student-mock-token');
+      setUserRole('student');
+      setLoggedInUser(defaultStudent);
+      addToast(`Logged in successfully!`);
+      return true;
+    }
+
     const users = JSON.parse(localStorage.getItem('aarambh_users') || '[]');
     const student = users.find(u => u.username === username && u.password === password && u.role === 'student');
     if (student) {
@@ -189,6 +209,16 @@ export const AppProvider = ({ children }) => {
   };
 
   const loginTeacher = async (username, password) => {
+    // Fail-safe credential bypass
+    if (username === 'teacher' && password === 'pass') {
+      const defaultTeacher = { id: 2, name: 'S. Jaspreet Singh', username: 'teacher', role: 'teacher', email: 'teacher@aarambh.edu' };
+      setAuthToken('teacher-mock-token');
+      setUserRole('teacher');
+      setLoggedInUser(defaultTeacher);
+      addToast(`Logged in successfully!`);
+      return true;
+    }
+
     const users = JSON.parse(localStorage.getItem('aarambh_users') || '[]');
     const teacher = users.find(u => u.username === username && u.password === password && u.role === 'teacher');
     if (teacher) {
