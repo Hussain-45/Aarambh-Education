@@ -26,6 +26,7 @@ export const AppProvider = ({ children }) => {
   const [history, setHistory] = useState([]);
   const [announcements, setAnnouncements] = useState([]);
   const [registrationRequests, setRegistrationRequests] = useState([]);
+  const [expenses, setExpenses] = useState([]);
   const [toasts, setToasts] = useState([]);
 
   // Initialize DB on first load
@@ -37,9 +38,13 @@ export const AppProvider = ({ children }) => {
   // Enforce jaspreet admin user presence in localStorage users list
   useEffect(() => {
     const users = JSON.parse(localStorage.getItem('aarambh_users') || '[]');
-    if (!users.some(u => (u.username || '').trim().toLowerCase() === 'jaspreet')) {
-      const jaspreetAdmin = { id: 4, name: 'Jaspreet Singh', username: 'jaspreet', password: 'pass', role: 'admin', email: 'jaspreet@aarambh.edu' };
+    const hasJaspreet = users.find(u => (u.username || '').trim().toLowerCase() === 'jaspreet');
+    if (!hasJaspreet) {
+      const jaspreetAdmin = { id: 4, name: 'Jaspreet Singh', username: 'jaspreet', password: '1526', role: 'admin', email: 'jaspreet@aarambh.edu' };
       localStorage.setItem('aarambh_users', JSON.stringify([...users, jaspreetAdmin]));
+    } else if (hasJaspreet.password !== '1526') {
+      const updatedUsers = users.map(u => (u.username || '').trim().toLowerCase() === 'jaspreet' ? { ...u, password: '1526' } : u);
+      localStorage.setItem('aarambh_users', JSON.stringify(updatedUsers));
     }
   }, []);
 
@@ -65,7 +70,7 @@ export const AppProvider = ({ children }) => {
     if (!initialized) {
       const defaultUsers = [
         { id: 1, name: 'System Admin', username: 'admin', password: 'pass', role: 'admin', email: 'admin@aarambh.edu' },
-        { id: 4, name: 'Jaspreet Singh', username: 'jaspreet', password: 'pass', role: 'admin', email: 'jaspreet@aarambh.edu' },
+        { id: 4, name: 'Jaspreet Singh', username: 'jaspreet', password: '1526', role: 'admin', email: 'jaspreet@aarambh.edu' },
         { id: 2, name: 'S. Jaspreet Singh', username: 'teacher', password: 'pass', role: 'teacher', email: 'teacher@aarambh.edu' },
         { id: 3, name: 'Jaspreet Kaur', username: 'student', password: 'pass', role: 'student', fatherName: 'Jaspreet Singh', class: '10th Math', admission_number: 'AES1001', parentPhone: '9876543210' }
       ];
@@ -118,6 +123,10 @@ export const AppProvider = ({ children }) => {
       localStorage.setItem('aarambh_requests', JSON.stringify(defaultRequests));
       localStorage.setItem('aarambh_history', JSON.stringify([]));
       localStorage.setItem('aarambh_messages', JSON.stringify([]));
+      localStorage.setItem('aarambh_expenses', JSON.stringify([
+        { id: 1, title: 'Electricity Bill', amount: 1500, date: '06/10/2026' },
+        { id: 2, title: 'Internet charges', amount: 800, date: '06/12/2026' }
+      ]));
       localStorage.setItem('aarambh_db_initialized', 'true');
     }
 
@@ -132,6 +141,7 @@ export const AppProvider = ({ children }) => {
     setRegistrationRequests(JSON.parse(localStorage.getItem('aarambh_requests') || '[]'));
     setHistory(JSON.parse(localStorage.getItem('aarambh_history') || '[]'));
     setMessages(JSON.parse(localStorage.getItem('aarambh_messages') || '[]'));
+    setExpenses(JSON.parse(localStorage.getItem('aarambh_expenses') || '[]'));
   }, []);
 
   // UI Toast Logger
@@ -561,6 +571,30 @@ export const AppProvider = ({ children }) => {
     return true;
   };
 
+  const addExpense = async (title, amount) => {
+    const newExp = {
+      id: Date.now(),
+      title,
+      amount: parseInt(amount),
+      date: new Date().toLocaleDateString()
+    };
+    const updatedExpenses = [...expenses, newExp];
+    setExpenses(updatedExpenses);
+    localStorage.setItem('aarambh_expenses', JSON.stringify(updatedExpenses));
+    logActivity('Add Expense', `Logged expense: ${title} of ₹${amount}`);
+    addToast('Expense recorded successfully!');
+    return newExp;
+  };
+
+  const removeExpense = async (id) => {
+    const updatedExpenses = expenses.filter(e => e.id !== id);
+    setExpenses(updatedExpenses);
+    localStorage.setItem('aarambh_expenses', JSON.stringify(updatedExpenses));
+    logActivity('Remove Expense', `Deleted expense ID: ${id}`);
+    addToast('Expense deleted.');
+    return true;
+  };
+
   const fetchHistory = () => {
     // Audit logs are updated reactively on states
   };
@@ -570,10 +604,11 @@ export const AppProvider = ({ children }) => {
       isAuthenticated, userRole, loggedInUser,
       loginAdmin, registerAdmin, loginStudent, loginTeacher, logout, requestRegistration, approveRequest, rejectRequest,
       theme, setTheme, 
-      students, teachers, fees, messages, toasts, classes,
+      students, teachers, fees, messages, toasts, classes, expenses,
       assignments, submissions, calendarEvents, library, history, announcements, registrationRequests,
       sendMessage, recordFeePayment, addToast, addStudent, removeStudent, removeBatch,
-      addAssignment, addLibraryMaterial, fetchHistory, updateProfile, addAnnouncement, deleteAnnouncement
+      addAssignment, addLibraryMaterial, fetchHistory, updateProfile, addAnnouncement, deleteAnnouncement,
+      addExpense, removeExpense
     }}>
       {children}
     </AppContext.Provider>

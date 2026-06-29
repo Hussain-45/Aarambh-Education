@@ -5,44 +5,19 @@ import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 
 const Requests = () => {
-  const { authHeaders, API_URL, approveRequest, rejectRequest, addToast } = useContext(AppContext);
-  const [requests, setRequests] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { registrationRequests, approveRequest, rejectRequest, addToast } = useContext(AppContext);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState('all');
 
-  const fetchRequests = async () => {
-    try {
-      const res = await fetch(`${API_URL}/admin/requests`, { headers: authHeaders });
-      if (res.ok) {
-        setRequests(await res.json());
-      }
-    } catch (e) {
-      console.error(e);
-      addToast('Failed to load requests', 'danger');
-    }
-    setIsLoading(false);
-  };
-
-  useEffect(() => {
-    fetchRequests();
-  }, []);
-
   const handleApprove = async (id) => {
-    const success = await approveRequest(id);
-    if (success) {
-      setRequests(requests.filter(r => r.id !== id));
-    }
+    await approveRequest(id);
   };
 
   const handleReject = async (id) => {
-    const success = await rejectRequest(id);
-    if (success) {
-      setRequests(requests.filter(r => r.id !== id));
-    }
+    await rejectRequest(id);
   };
 
-  const filteredRequests = requests.filter(req => {
+  const filteredRequests = registrationRequests.filter(req => {
     const matchesSearch = (req.name || req.username || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesRole = filterRole === 'all' || req.role === filterRole;
     return matchesSearch && matchesRole;
@@ -94,12 +69,7 @@ const Requests = () => {
             </div>
           </div>
 
-          {isLoading ? (
-            <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-muted)' }}>
-              <span style={{ display: 'inline-block', animation: 'spin 1s linear infinite', fontSize: '2rem' }}>⟳</span>
-              <div style={{ marginTop: '1rem' }}>Loading requests...</div>
-            </div>
-          ) : filteredRequests.length === 0 ? (
+          {filteredRequests.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '5rem 2rem', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
               <Inbox size={48} style={{ opacity: 0.5, marginBottom: '1rem' }} />
               <div style={{ fontSize: '1.2rem', fontWeight: 500, color: 'var(--text-main)' }}>No Requests Found</div>

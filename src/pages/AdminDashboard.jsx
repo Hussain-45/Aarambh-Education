@@ -9,34 +9,23 @@ import { useNavigate } from 'react-router-dom';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const AdminDashboard = () => {
-  const { fees, authHeaders, API_URL } = useContext(AppContext);
+  const { fees, students, classes, registrationRequests } = useContext(AppContext);
   const navigate = useNavigate();
-  const [analytics, setAnalytics] = useState({
-    totalStudents: 0,
-    activeClasses: 0,
-    totalRevenue: 0,
-    pendingFees: 0
-  });
-  const [pendingRequests, setPendingRequests] = useState([]);
 
-  useEffect(() => {
-    const fetchAnalytics = async () => {
-      try {
-        const res = await fetch(`${API_URL}/analytics`, { headers: authHeaders });
-        if (res.ok) {
-          setAnalytics(await res.json());
-        }
-        
-        const reqRes = await fetch(`${API_URL}/admin/requests`, { headers: authHeaders });
-        if (reqRes.ok) {
-          setPendingRequests(await reqRes.json());
-        }
-      } catch (e) {
-        console.error('Failed to fetch analytics', e);
-      }
-    };
-    fetchAnalytics();
-  }, [API_URL, authHeaders]);
+  // Calculate analytics locally
+  const totalStudents = students.length;
+  const activeClasses = classes.length;
+  const totalRevenue = fees.reduce((sum, fee) => sum + fee.paid, 0);
+  const pendingFees = fees.reduce((sum, fee) => sum + (fee.status !== 'Paid' ? (fee.total - fee.paid) : 0), 0);
+
+  const analytics = {
+    totalStudents,
+    activeClasses,
+    totalRevenue,
+    pendingFees
+  };
+
+  const pendingRequests = registrationRequests.filter(r => r.status === 'pending');
 
   // Mock data for attendance trend (can be connected to backend later)
   const attendanceData = [

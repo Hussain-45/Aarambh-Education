@@ -5,20 +5,10 @@ import Header from '../components/Header';
 import { TrendingUp, TrendingDown, Plus, Trash2 } from 'lucide-react';
 
 const ProfitLoss = () => {
-  const { userRole, fees, authHeaders, API_URL, addToast } = useContext(AppContext);
-  const [expenses, setExpenses] = useState([]);
+  const { userRole, fees, expenses, addExpense, removeExpense } = useContext(AppContext);
   const [showAdd, setShowAdd] = useState(false);
   const [title, setTitle] = useState('');
   const [amount, setAmount] = useState('');
-
-  // Fetch expenses
-  useEffect(() => {
-    if (userRole !== 'admin') return;
-    fetch(`${API_URL}/expenses`, { headers: authHeaders })
-      .then(res => res.json())
-      .then(data => setExpenses(data))
-      .catch(e => console.error(e));
-  }, [API_URL, authHeaders, userRole]);
 
   if (userRole !== 'admin') {
     return (
@@ -40,38 +30,15 @@ const ProfitLoss = () => {
 
   const handleAddExpense = async (e) => {
     e.preventDefault();
-    try {
-      const res = await fetch(`${API_URL}/expenses`, {
-        method: 'POST',
-        headers: authHeaders,
-        body: JSON.stringify({ title, amount: parseInt(amount), date: new Date().toLocaleDateString() })
-      });
-      if (res.ok) {
-        const newExpense = await res.json();
-        setExpenses([newExpense, ...expenses]);
-        setShowAdd(false);
-        setTitle('');
-        setAmount('');
-        addToast('Expense added', 'success');
-      }
-    } catch (e) {
-      addToast('Failed to add expense', 'danger');
-    }
+    await addExpense(title, amount);
+    setShowAdd(false);
+    setTitle('');
+    setAmount('');
   };
 
   const handleDeleteExpense = async (id) => {
     if (!window.confirm('Are you sure you want to delete this expense?')) return;
-    try {
-      const res = await fetch(`${API_URL}/expenses/${id}`, {
-        method: 'DELETE', headers: authHeaders
-      });
-      if (res.ok) {
-        setExpenses(expenses.filter(e => e.id !== id));
-        addToast('Expense deleted', 'success');
-      }
-    } catch (e) {
-      addToast('Failed to delete expense', 'danger');
-    }
+    await removeExpense(id);
   };
 
   return (
