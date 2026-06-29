@@ -41,7 +41,7 @@ export const AppProvider = ({ children }) => {
     let modified = false;
 
     // 1. Enforce jaspreet admin
-    const hasJaspreet = users.find(u => (u.username || '').trim().toLowerCase() === 'jaspreet');
+    const hasJaspreet = users.find(u => (u.username || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase() === 'jaspreet');
     if (!hasJaspreet) {
       users.push({ id: 4, name: 'Jaspreet Singh', username: 'jaspreet', password: '1526', role: 'admin', email: 'jaspreet@aarambh.edu' });
       modified = true;
@@ -51,7 +51,7 @@ export const AppProvider = ({ children }) => {
     }
 
     // 2. Enforce teacher user
-    const hasTeacher = users.find(u => (u.username || '').trim().toLowerCase() === 'teacher');
+    const hasTeacher = users.find(u => (u.username || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase() === 'teacher');
     if (!hasTeacher) {
       users.push({ id: 2, name: 'S. Jaspreet Singh', username: 'teacher', password: '1526', role: 'teacher', email: 'teacher@aarambh.edu', assignedClasses: ['10th Math', '10th Science'] });
       modified = true;
@@ -188,7 +188,7 @@ export const AppProvider = ({ children }) => {
 
   // Auth Operations
   const loginAdmin = async (username, password) => {
-    const cleanUsername = (username || '').trim().toLowerCase();
+    const cleanUsername = (username || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
     const cleanPassword = (password || '').trim();
 
     // Fail-safe credential bypass (allows ANY password for admin/jaspreet)
