@@ -2,6 +2,7 @@ import React, { useContext } from 'react';
 import { LayoutDashboard, Users, BookOpen, CheckSquare, Settings, LogOut, IndianRupee, MessageSquare, Calendar, ClipboardList, Clock } from 'lucide-react';
 import { AppContext } from '../context/AppContext';
 import { useNavigate, useLocation } from 'react-router-dom';
+import logoImg from '../assets/image_7cc2c3.jpg';
 
 const SidebarItem = ({ icon: Icon, label, active, onClick }) => (
   <div onClick={onClick} style={{
@@ -46,8 +47,12 @@ const Sidebar = () => {
   return (
     <div className={`sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
       <div style={{ padding: '2rem 1.5rem', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-        <div style={{ width: '32px', height: '32px', background: 'var(--primary-text)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <span style={{ color: 'white', fontWeight: 'bold', fontSize: '1.2rem' }}>A</span>
+        <div style={{ 
+          width: '36px', height: '36px', borderRadius: '50%', 
+          overflow: 'hidden', background: 'white', border: '1px solid rgba(255,255,255,0.1)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+        }}>
+          <img src={logoImg} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         </div>
         <div>
           <h2 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-main)' }}>AARAMBH</h2>
