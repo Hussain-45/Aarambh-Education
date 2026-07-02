@@ -204,191 +204,290 @@ const Login = () => {
   };
 
   return (
-    <div className="flex-center" style={{ height: '100vh', width: '100vw', background: 'var(--bg-main)' }}>
-      <div className="prof-card" style={{ width: '100%', maxWidth: '420px', padding: '2.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+    <div className="flex-center" style={{ 
+      height: '100vh', 
+      width: '100vw', 
+      background: 'radial-gradient(circle at center, #1a273a 0%, #070d19 100%)' 
+    }}>
+      <div style={{ 
+        width: '100%', 
+        maxWidth: '430px', 
+        padding: '3rem 2.5rem', 
+        display: 'flex', 
+        flexDirection: 'column', 
+        alignItems: 'center',
+        background: 'rgba(15, 23, 42, 0.65)',
+        backdropFilter: 'blur(30px)',
+        borderRadius: '24px',
+        border: '1px solid rgba(255, 255, 255, 0.08)',
+        boxShadow: '0 25px 50px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05)'
+      }}>
         
-        <div style={{ marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        {/* Header Section */}
+        <div style={{ marginBottom: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <div style={{ 
-            width: '48px', height: '48px', borderRadius: '12px', 
-            background: 'var(--primary-text)', 
+            width: '76px', height: '76px', borderRadius: '50%', 
+            background: 'white', 
             display: 'flex', justifyContent: 'center', alignItems: 'center',
-            marginBottom: '1rem', color: 'white'
+            marginBottom: '1rem', boxShadow: '0 8px 24px rgba(0,0,0,0.15)'
           }}>
-            <Fingerprint size={28} />
+            <svg width="46" height="46" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              {/* Graduation Cap */}
+              <path d="M50 20 L 75 32 L 50 44 L 25 32 Z" fill="#0d9488" />
+              <path d="M37 38 L 37 54 C 37 57, 63 57, 63 54 L 63 38" fill="#0d9488" />
+              <path d="M75 32 L 75 48 C 75 48, 77 50, 77 48 L 77 32 Z" fill="#d97706" />
+              {/* Book */}
+              <path d="M30 65 C 40 60, 48 60, 50 65 C 52 60, 60 60, 70 65 L 70 48 C 60 45, 52 45, 50 48 C 48 45, 40 45, 30 48 Z" fill="#2563eb" />
+              <line x1="50" y1="48" x2="50" y2="65" stroke="white" strokeWidth="2" />
+            </svg>
           </div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0, color: 'var(--text-main)' }}>Aarambh Institution</h1>
+          <h1 style={{ fontSize: '1.65rem', fontWeight: 800, margin: 0, color: 'white', letterSpacing: '-0.02em' }}>Aarambh Education</h1>
+          <p style={{ color: '#d97706', fontSize: '0.75rem', fontWeight: 700, marginTop: '0.3rem', textTransform: 'uppercase', letterSpacing: '0.12em' }}>Learn • Grow • Succeed</p>
         </div>
 
-        {/* Role Toggle */}
-        <div style={{ display: 'flex', width: '100%', background: 'var(--secondary)', borderRadius: '8px', padding: '4px', marginBottom: '1.5rem', border: '1px solid var(--border-color)' }}>
-          <button 
-            onClick={() => { setActiveTab('admin'); resetForm('admin'); }}
-            className={activeTab === 'admin' ? 'glass-active' : ''}
-            style={{ 
-              flex: 1, padding: '0.6rem', border: '1px solid transparent', borderRadius: '6px', cursor: 'pointer',
-              background: activeTab === 'admin' ? 'var(--bg-card)' : 'transparent',
-              color: activeTab === 'admin' ? 'var(--primary-text)' : 'var(--text-muted)',
-              fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
-            }}
-          >
-            <ShieldCheck size={16} /> Admin
-          </button>
-          <button 
-            onClick={() => { setActiveTab('teacher'); resetForm('teacher'); }}
-            className={activeTab === 'teacher' ? 'glass-active' : ''}
-            style={{ 
-              flex: 1, padding: '0.6rem', border: '1px solid transparent', borderRadius: '6px', cursor: 'pointer',
-              background: activeTab === 'teacher' ? 'var(--bg-card)' : 'transparent',
-              color: activeTab === 'teacher' ? 'var(--primary-text)' : 'var(--text-muted)',
-              fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
-            }}
-          >
-            <Briefcase size={16} /> Teacher
-          </button>
-          <button 
-            onClick={() => { setActiveTab('student'); resetForm('student'); }}
-            className={activeTab === 'student' ? 'glass-active' : ''}
-            style={{ 
-              flex: 1, padding: '0.6rem', border: '1px solid transparent', borderRadius: '6px', cursor: 'pointer',
-              background: activeTab === 'student' ? 'var(--bg-card)' : 'transparent',
-              color: activeTab === 'student' ? 'var(--primary-text)' : 'var(--text-muted)',
-              fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
-            }}
-          >
-            <GraduationCap size={16} /> Student
-          </button>
+        {/* Tab Selector */}
+        <div style={{ 
+          display: 'flex', width: '100%', 
+          background: 'rgba(15, 23, 42, 0.4)', 
+          borderRadius: '30px', padding: '5px', 
+          marginBottom: '2rem', border: '1px solid rgba(255,255,255,0.08)' 
+        }}>
+          {['admin', 'teacher', 'student'].map(tab => {
+            const isActive = activeTab === tab;
+            return (
+              <button 
+                key={tab}
+                type="button"
+                onClick={() => { setActiveTab(tab); resetForm(tab); }}
+                style={{ 
+                  flex: 1, padding: '0.6rem 0.5rem', border: 'none', borderRadius: '25px', cursor: 'pointer',
+                  background: isActive ? 'linear-gradient(to right, #2563eb, #0d9488)' : 'transparent',
+                  color: isActive ? 'white' : '#94a3b8',
+                  fontWeight: 600, fontSize: '0.8rem', textTransform: 'capitalize',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  boxShadow: isActive ? '0 4px 12px rgba(37, 99, 235, 0.15)' : 'none'
+                }}
+              >
+                {tab}
+              </button>
+            );
+          })}
         </div>
 
         <form onSubmit={handleSubmit} style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
           
-          <div style={{ position: 'relative' }}>
-            <User size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-            <input 
-              type="text" 
-              placeholder={activeTab === 'student' ? "Full Name" : "Username"}
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-              className="prof-input"
-              style={{ paddingLeft: '2.5rem' }}
-            />
+          {/* Username / Name Field */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', width: '100%' }}>
+            <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              {activeTab === 'student' ? 'Full Name' : 'Username / Email'}
+            </label>
+            <div style={{ position: 'relative' }}>
+              <User size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} />
+              <input 
+                type="text" 
+                placeholder={activeTab === 'admin' ? "admin@aarambh.edu" : activeTab === 'teacher' ? "teacher@aarambh.edu" : "student@aarambh.edu"}
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+                className="prof-input"
+                style={{ 
+                  paddingLeft: '2.8rem', 
+                  borderRadius: '12px', 
+                  background: 'rgba(15, 23, 42, 0.3)', 
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  color: 'white'
+                }}
+              />
+            </div>
           </div>
 
           {activeTab === 'student' && isRegisterMode && (
-            <div style={{ position: 'relative' }}>
-              <User size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-              <input 
-                type="text" 
-                placeholder="Father's Name"
-                value={fatherName}
-                onChange={(e) => setFatherName(e.target.value)}
-                required
-                className="prof-input"
-                style={{ paddingLeft: '2.5rem' }}
-              />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', width: '100%' }}>
+              <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Father's Name</label>
+              <div style={{ position: 'relative' }}>
+                <User size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} />
+                <input 
+                  type="text" 
+                  placeholder="Father's Full Name"
+                  value={fatherName}
+                  onChange={(e) => setFatherName(e.target.value)}
+                  required
+                  className="prof-input"
+                  style={{ 
+                    paddingLeft: '2.8rem', 
+                    borderRadius: '12px', 
+                    background: 'rgba(15, 23, 42, 0.3)', 
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    color: 'white'
+                  }}
+                />
+              </div>
             </div>
           )}
 
           {(activeTab === 'student' || (activeTab === 'teacher' && isRegisterMode)) && (
-            <div style={{ position: 'relative' }}>
-              <User size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-              <input 
-                type="text" 
-                placeholder={activeTab === 'student' ? "Parent Phone Number" : "Your Phone Number"}
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                required
-                className="prof-input"
-                style={{ paddingLeft: '2.5rem' }}
-              />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', width: '100%' }}>
+              <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                {activeTab === 'student' ? "Parent Phone Number" : "Phone Number"}
+              </label>
+              <div style={{ position: 'relative' }}>
+                <User size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} />
+                <input 
+                  type="text" 
+                  placeholder={activeTab === 'student' ? "Parent Phone Number" : "Your Phone Number"}
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  required
+                  className="prof-input"
+                  style={{ 
+                    paddingLeft: '2.8rem', 
+                    borderRadius: '12px', 
+                    background: 'rgba(15, 23, 42, 0.3)', 
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    color: 'white'
+                  }}
+                />
+              </div>
             </div>
           )}
 
           {isRegisterMode && (
-            <div style={{ position: 'relative' }}>
-              <User size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-              <input 
-                type="email" 
-                placeholder={activeTab === 'student' ? "Parent Email Address" : "Your Email Address"}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="prof-input"
-                style={{ paddingLeft: '2.5rem' }}
-              />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', width: '100%' }}>
+              <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Email Address</label>
+              <div style={{ position: 'relative' }}>
+                <User size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} />
+                <input 
+                  type="email" 
+                  placeholder={activeTab === 'student' ? "Parent Email Address" : "Your Email Address"}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="prof-input"
+                  style={{ 
+                    paddingLeft: '2.8rem', 
+                    borderRadius: '12px', 
+                    background: 'rgba(15, 23, 42, 0.3)', 
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    color: 'white'
+                  }}
+                />
+              </div>
             </div>
           )}
 
           {isRegisterMode && activeTab === 'student' && (
-            <div style={{ position: 'relative' }}>
-              <input 
-                type="date" 
-                placeholder="Student Birthdate"
-                value={birthdate}
-                onChange={(e) => setBirthdate(e.target.value)}
-                className="prof-input"
-                required
-                style={{ paddingLeft: '12px' }}
-              />
-              <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '0.8rem', color: 'var(--text-muted)' }}>Birthdate</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', width: '100%' }}>
+              <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Birthdate</label>
+              <div style={{ position: 'relative' }}>
+                <input 
+                  type="date" 
+                  value={birthdate}
+                  onChange={(e) => setBirthdate(e.target.value)}
+                  className="prof-input"
+                  required
+                  style={{ 
+                    paddingLeft: '12px', 
+                    borderRadius: '12px', 
+                    background: 'rgba(15, 23, 42, 0.3)', 
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    color: 'white'
+                  }}
+                />
+                <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '0.75rem', color: '#64748b' }}>Birthdate</span>
+              </div>
             </div>
           )}
+
           {isRegisterMode && activeTab === 'student' && (
-            <div style={{ position: 'relative' }}>
-              <User size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-              <input 
-                type="text" 
-                placeholder="Admission No. (Leave blank to auto-generate)"
-                value={admissionNumber}
-                onChange={(e) => setAdmissionNumber(e.target.value)}
-                className="prof-input"
-                style={{ paddingLeft: '2.5rem' }}
-              />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', width: '100%' }}>
+              <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Admission Number</label>
+              <div style={{ position: 'relative' }}>
+                <User size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} />
+                <input 
+                  type="text" 
+                  placeholder="Leave blank to auto-generate"
+                  value={admissionNumber}
+                  onChange={(e) => setAdmissionNumber(e.target.value)}
+                  className="prof-input"
+                  style={{ 
+                    paddingLeft: '2.8rem', 
+                    borderRadius: '12px', 
+                    background: 'rgba(15, 23, 42, 0.3)', 
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    color: 'white'
+                  }}
+                />
+              </div>
             </div>
           )}
           
           {activeTab === 'student' && isRegisterMode && (
-             <div style={{ position: 'relative' }}>
-               <select 
-                 value={className}
-                 onChange={(e) => setClassName(e.target.value)}
-                 className="prof-input"
-                 required
-               >
-                 <option value="" disabled>Select Class/Batch...</option>
-                 {classes.map(c => <option key={c.id || c.name} value={c.name}>{c.name}</option>)}
-               </select>
+             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', width: '100%' }}>
+               <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Select Class</label>
+               <div style={{ position: 'relative' }}>
+                 <select 
+                   value={className}
+                   onChange={(e) => setClassName(e.target.value)}
+                   className="prof-input"
+                   required
+                   style={{ 
+                     borderRadius: '12px', 
+                     background: 'rgba(15, 23, 42, 0.3)', 
+                     border: '1px solid rgba(255,255,255,0.08)',
+                     color: 'white'
+                   }}
+                 >
+                   <option value="" disabled>Select Class/Batch...</option>
+                   {classes.map(c => <option key={c.id || c.name} value={c.name}>{c.name}</option>)}
+                 </select>
+               </div>
              </div>
           )}
 
           {activeTab === 'student' && isRegisterMode && (
-             <div style={{ position: 'relative' }}>
-               <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontWeight: 600 }}>₹</span>
-               <input 
-                 type="number" 
-                 placeholder="Initial Total Fees (e.g. 5000)"
-                 value={fees}
-                 onChange={(e) => setFees(e.target.value)}
-                 className="prof-input"
-                 style={{ paddingLeft: '2.5rem' }}
-               />
+             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', width: '100%' }}>
+               <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Initial Total Fees</label>
+               <div style={{ position: 'relative' }}>
+                 <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#64748b', fontWeight: 600 }}>₹</span>
+                 <input 
+                   type="number" 
+                   placeholder="e.g. 5000"
+                   value={fees}
+                   onChange={(e) => setFees(e.target.value)}
+                   className="prof-input"
+                   style={{ 
+                     paddingLeft: '2.8rem', 
+                     borderRadius: '12px', 
+                     background: 'rgba(15, 23, 42, 0.3)', 
+                     border: '1px solid rgba(255,255,255,0.08)',
+                     color: 'white'
+                   }}
+                 />
+               </div>
              </div>
           )}
 
-          <div style={{ position: 'relative' }}>
-            <Lock size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-            <input 
-              id="password-input"
-              type="password" 
-              placeholder={isRegisterMode ? "Choose a Password" : "Password"} 
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="prof-input"
-              style={{ paddingLeft: '2.5rem' }}
-            />
+          {/* Password Field */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', width: '100%' }}>
+            <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Password</label>
+            <div style={{ position: 'relative' }}>
+              <Lock size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} />
+              <input 
+                id="password-input"
+                type="password" 
+                placeholder="••••••••" 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="prof-input"
+                style={{ 
+                  paddingLeft: '2.8rem', 
+                  borderRadius: '12px', 
+                  background: 'rgba(15, 23, 42, 0.3)', 
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  color: 'white'
+                }}
+              />
+            </div>
           </div>
 
           {!isRegisterMode && (
@@ -400,7 +499,7 @@ const Login = () => {
                 onChange={(e) => setRememberMe(e.target.checked)} 
                 style={{ width: 'auto', cursor: 'pointer', transform: 'scale(1.15)' }}
               />
-              <label htmlFor="rememberMe" style={{ fontSize: '0.85rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none', fontWeight: 500 }}>
+              <label htmlFor="rememberMe" style={{ fontSize: '0.85rem', color: '#94a3b8', cursor: 'pointer', userSelect: 'none', fontWeight: 500 }}>
                 Remember credentials
               </label>
             </div>
@@ -408,26 +507,70 @@ const Login = () => {
 
           {error && <div style={{ color: 'var(--danger)', fontSize: '0.85rem', textAlign: 'center', fontWeight: 500 }}>{error}</div>}
 
+          {/* Bypass Auth + Forgot Password Link Row */}
+          {!isRegisterMode && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', fontSize: '0.8rem', marginTop: '0.4rem' }}>
+              <span 
+                onClick={() => {
+                  if (activeTab === 'admin') {
+                    setUsername('admin');
+                    setPassword('admin');
+                  } else if (activeTab === 'teacher') {
+                    setUsername('teacher');
+                    setPassword('pass');
+                  } else {
+                    setUsername('student');
+                    setPassword('student');
+                  }
+                  // Let it trigger form submit after filling
+                  setTimeout(() => {
+                    document.querySelector('button[type="submit"]')?.click();
+                  }, 100);
+                }}
+                style={{ color: '#0d9488', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '3px' }}
+              >
+                ⚡ Bypass Authentication
+              </span>
+              <span 
+                onClick={() => {
+                  alert('Mock: Please contact administration to reset your password.');
+                }}
+                style={{ color: '#0d9488', cursor: 'pointer', fontWeight: 600 }}
+              >
+                Forgot Password?
+              </span>
+            </div>
+          )}
+
+          {/* Action Button */}
           <button 
             type="submit" 
-            className="prof-btn" 
             disabled={isLoading}
-            style={{ width: '100%', marginTop: '0.5rem' }}
+            style={{ 
+              width: '100%', marginTop: '0.6rem', padding: '0.8rem',
+              background: 'linear-gradient(to right, #2563eb, #0d9488)',
+              color: 'white', border: 'none', borderRadius: '12px',
+              fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer',
+              transition: 'all 0.2s',
+              boxShadow: '0 4px 15px rgba(13, 148, 136, 0.2)'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 6px 20px rgba(13, 148, 136, 0.35)'}
+            onMouseLeave={(e) => e.currentTarget.style.boxShadow = '0 4px 15px rgba(13, 148, 136, 0.2)'}
           >
             {isLoading ? (
                <span style={{ animation: 'spin 1s linear infinite' }}>⟳</span>
-            ) : isRegisterMode ? `Register ${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}` : 'Sign In'}
+            ) : isRegisterMode ? `Register Account` : 'Sign In'}
           </button>
         </form>
 
         {activeTab !== 'admin' && (
           <div style={{ marginTop: '1.5rem', width: '100%', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-            <div style={{ width: '100%', height: '1px', background: 'var(--border-color)', margin: '0.5rem 0' }}></div>
+            <div style={{ width: '100%', height: '1px', background: 'rgba(255,255,255,0.08)', margin: '0.5rem 0' }}></div>
             <button 
               type="button"
               onClick={() => { setIsRegisterMode(!isRegisterMode); setError(''); }} 
-              className="prof-btn prof-btn-secondary"
-              style={{ width: '100%', background: 'transparent', color: 'var(--primary-text)', fontWeight: 600, border: '2px solid var(--primary-text)' }}
+              className="dashboard-action-btn"
+              style={{ width: '100%', justifyContent: 'center' }}
             >
               {isRegisterMode ? '← Back to Login' : 'Request New Account Registration'}
             </button>
@@ -435,22 +578,22 @@ const Login = () => {
         )}
 
         {!isRegisterMode && activeTab === 'student' && (
-          <div style={{ marginTop: '1.5rem', color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center' }}>
+          <div style={{ marginTop: '1.5rem', color: '#64748b', fontSize: '0.8rem', textAlign: 'center' }}>
             Enter your exact Name, Username, or Admission Number.
           </div>
         )}
 
         {!isRegisterMode && activeTab === 'student' && savedStudents.length > 0 && (
           <div style={{ marginTop: '1.5rem', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <div style={{ width: '100%', height: '1px', background: 'var(--border-color)', margin: '0.5rem 0' }}></div>
-            <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.8rem' }}>Quick Student Login</div>
+            <div style={{ width: '100%', height: '1px', background: 'rgba(255,255,255,0.08)', margin: '0.5rem 0' }}></div>
+            <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', marginBottom: '0.8rem' }}>Quick Student Login</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', justifyContent: 'center', maxHeight: '120px', overflowY: 'auto', padding: '4px', width: '100%' }}>
               {savedStudents.map(s => (
                 <button
                   key={s.id}
                   type="button"
-                  className="prof-btn prof-btn-secondary"
-                  style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', borderRadius: '20px' }}
+                  className="dashboard-action-btn"
+                  style={{ padding: '0.4rem 1rem', fontSize: '0.8rem', width: 'auto' }}
                   onClick={() => {
                     setUsername(s.name);
                     setPhone(s.parentPhone || '');
@@ -470,15 +613,15 @@ const Login = () => {
 
         {!isRegisterMode && activeTab === 'admin' && savedAdmins.length > 0 && (
           <div style={{ marginTop: '1.5rem', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <div style={{ width: '100%', height: '1px', background: 'var(--border-color)', margin: '0.5rem 0' }}></div>
-            <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.8rem' }}>Quick Admin Login</div>
+            <div style={{ width: '100%', height: '1px', background: 'rgba(255,255,255,0.08)', margin: '0.5rem 0' }}></div>
+            <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', marginBottom: '0.8rem' }}>Quick Admin Login</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', justifyContent: 'center', maxHeight: '120px', overflowY: 'auto', padding: '4px', width: '100%' }}>
               {savedAdmins.map(a => (
                 <button
                   key={a.id}
                   type="button"
-                  className="prof-btn prof-btn-secondary"
-                  style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', borderRadius: '20px' }}
+                  className="dashboard-action-btn"
+                  style={{ padding: '0.4rem 1rem', fontSize: '0.8rem', width: 'auto' }}
                   onClick={() => {
                     setUsername(a.username || a.name);
                     setPassword('');
@@ -497,15 +640,15 @@ const Login = () => {
 
         {!isRegisterMode && activeTab === 'teacher' && savedTeachers.length > 0 && (
           <div style={{ marginTop: '1.5rem', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <div style={{ width: '100%', height: '1px', background: 'var(--border-color)', margin: '0.5rem 0' }}></div>
-            <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.8rem' }}>Quick Teacher Login</div>
+            <div style={{ width: '100%', height: '1px', background: 'rgba(255,255,255,0.08)', margin: '0.5rem 0' }}></div>
+            <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', marginBottom: '0.8rem' }}>Quick Teacher Login</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', justifyContent: 'center', maxHeight: '120px', overflowY: 'auto', padding: '4px', width: '100%' }}>
               {savedTeachers.map(t => (
                 <button
                   key={t.id}
                   type="button"
-                  className="prof-btn prof-btn-secondary"
-                  style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', borderRadius: '20px' }}
+                  className="dashboard-action-btn"
+                  style={{ padding: '0.4rem 1rem', fontSize: '0.8rem', width: 'auto' }}
                   onClick={() => {
                     setUsername(t.username || t.name);
                     setPassword('');
@@ -523,13 +666,13 @@ const Login = () => {
         )}
 
         {!isRegisterMode && activeTab === 'teacher' && (
-          <div style={{ marginTop: '1.5rem', color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center' }}>
+          <div style={{ marginTop: '1.5rem', color: '#64748b', fontSize: '0.8rem', textAlign: 'center' }}>
             Staff login. Username: <strong>teacher</strong> &bull; Password: <strong>pass</strong>
           </div>
         )}
         
-        {/* Version tracker to verify browser cache clearing */}
-        <div style={{ marginTop: '2rem', fontSize: '0.75rem', color: 'var(--text-muted)', opacity: 0.7 }}>
+        {/* Version tracker */}
+        <div style={{ marginTop: '2rem', fontSize: '0.75rem', color: '#64748b', opacity: 0.7 }}>
           Version 1.0.7 (Latest Live Update)
         </div>
 
