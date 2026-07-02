@@ -13,10 +13,33 @@ const Settings = () => {
   // SMTP Settings States
   const [smtpEmail, setSmtpEmail] = useState('');
   const [smtpPassword, setSmtpPassword] = useState('');
+  
+  // System Toggle States
+  const [emailFeeAlerts, setEmailFeeAlerts] = useState(true);
+  const [emailAttendanceAlerts, setEmailAttendanceAlerts] = useState(true);
 
   const handleSendMonthlyAttendanceReport = async () => {
     addToast('Compiling and sending monthly attendance reports...', 'info');
     await sendMonthlyAttendanceReport();
+  };
+
+  const handleToggleSetting = async (key, val) => {
+    if (key === 'emailFeeAlerts') setEmailFeeAlerts(val);
+    if (key === 'emailAttendanceAlerts') setEmailAttendanceAlerts(val);
+
+    try {
+      await fetch(`${API_URL}/admin/system-settings`, {
+        method: 'POST',
+        headers: authHeaders,
+        body: JSON.stringify({
+          emailFeeAlerts: key === 'emailFeeAlerts' ? val : emailFeeAlerts,
+          emailAttendanceAlerts: key === 'emailAttendanceAlerts' ? val : emailAttendanceAlerts
+        })
+      });
+      addToast('Notification preferences updated.', 'success');
+    } catch (e) {
+      addToast('Preferences saved locally.', 'success');
+    }
   };
 
   // Mock states for new features
@@ -35,6 +58,26 @@ const Settings = () => {
       fetchHistory();
     }
   }, [loggedInUser]);
+
+  useEffect(() => {
+    const fetchSystemSettings = async () => {
+      try {
+        const res = await fetch(`${API_URL}/admin/system-settings`, {
+          headers: authHeaders
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setEmailFeeAlerts(data.emailFeeAlerts);
+          setEmailAttendanceAlerts(data.emailAttendanceAlerts);
+        }
+      } catch (e) {
+        // ignore
+      }
+    };
+    if (loggedInUser?.role === 'admin') {
+      fetchSystemSettings();
+    }
+  }, [loggedInUser, API_URL, authHeaders]);
 
   useEffect(() => {
     const fetchSmtpSettings = async () => {
@@ -353,7 +396,7 @@ const Settings = () => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
                 <div>
-                  <span style={{ fontWeight: 500, display: 'block' }}>Email Notifications</span>
+                  <span style={{ fontWeight: 500, display: 'block' }}>Email Notifications (General)</span>
                   <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Receive daily summaries and alerts via email</span>
                 </div>
                 <input type="checkbox" checked={emailAlerts} onChange={(e) => setEmailAlerts(e.target.checked)} style={{ transform: 'scale(1.2)' }} />
@@ -365,6 +408,25 @@ const Settings = () => {
                 </div>
                 <input type="checkbox" checked={smsAlerts} onChange={(e) => setSmsAlerts(e.target.checked)} style={{ transform: 'scale(1.2)' }} />
               </label>
+
+              {loggedInUser?.role === 'admin' && (
+                <>
+                  <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
+                    <div>
+                      <span style={{ fontWeight: 500, display: 'block' }}>Auto-Send Fee Reminders via Email</span>
+                      <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Send billing reminder emails to parents when triggering dues alerts</span>
+                    </div>
+                    <input type="checkbox" checked={emailFeeAlerts} onChange={(e) => handleToggleSetting('emailFeeAlerts', e.target.checked)} style={{ transform: 'scale(1.2)' }} />
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
+                    <div>
+                      <span style={{ fontWeight: 500, display: 'block' }}>Auto-Send Monthly Attendance Reports</span>
+                      <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Allow sending structured monthly attendance HTML reports to parents</span>
+                    </div>
+                    <input type="checkbox" checked={emailAttendanceAlerts} onChange={(e) => handleToggleSetting('emailAttendanceAlerts', e.target.checked)} style={{ transform: 'scale(1.2)' }} />
+                  </label>
+                </>
+              )}
             </div>
           </div>
 

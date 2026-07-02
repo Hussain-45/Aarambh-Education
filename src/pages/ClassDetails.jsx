@@ -188,10 +188,28 @@ const ClassDetails = () => {
                       <td><span className={`badge badge-${fee.status === 'Paid' ? 'success' : fee.status === 'Pending' ? 'warning' : 'danger'}`}>{fee.status}</span></td>
                       <td style={{ display: 'flex', gap: '0.5rem' }}>
                         {fee.status !== 'Paid' && (
-                          <>
-                            <button onClick={() => recordFeePayment(fee.studentId, fee.total - fee.paid, 'Cash', new Date().toLocaleDateString(), selectedMonth)} className="prof-btn prof-btn-secondary" style={{ color: 'var(--success)', borderColor: 'var(--success)', background: 'transparent', padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}>Mark Paid</button>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                            <select 
+                              id={`pay-mode-${fee.id}`} 
+                              defaultValue="Cash" 
+                              className="prof-input" 
+                              style={{ padding: '0.2rem 0.5rem', fontSize: '0.8rem', width: 'auto', margin: 0, height: '30px' }}
+                            >
+                              <option value="Cash">💵 Cash</option>
+                              <option value="Online">💳 Online</option>
+                            </select>
+                            <button 
+                              onClick={() => {
+                                const mode = document.getElementById(`pay-mode-${fee.id}`).value;
+                                recordFeePayment(fee.studentId, fee.total - fee.paid, mode, new Date().toLocaleDateString(), selectedMonth);
+                              }} 
+                              className="prof-btn prof-btn-secondary" 
+                              style={{ color: 'var(--success)', borderColor: 'var(--success)', background: 'transparent', padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
+                            >
+                              Mark Paid
+                            </button>
                             <button onClick={() => handleSendReminder(fee)} className="prof-btn" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}>Send Reminder</button>
-                          </>
+                          </div>
                         )}
                         {fee.status === 'Paid' && (
                           <button onClick={() => { setSelectedReceiptFee(fee); setIsReceiptModalOpen(true); }} className="prof-btn prof-btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}>

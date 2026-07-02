@@ -496,16 +496,22 @@ app.post('/api/admin/attendance-report', authenticateToken, async (req, res) => 
   if (req.user.role !== 'admin') return res.sendStatus(403);
   if (!transporter) return res.status(500).json({ error: 'Email service not ready' });
 
-  // Get previous month string in YYYY-MM format
-  const now = new Date();
-  let prevMonth = now.getMonth(); // 0-indexed, so current month index is actually previous month number!
-  let year = now.getFullYear();
-  if (prevMonth === 0) {
-    prevMonth = 12;
-    year -= 1;
-  }
-  const monthString = `${year}-${prevMonth.toString().padStart(2, '0')}`;
-  const monthName = new Date(year, prevMonth - 1).toLocaleString('default', { month: 'long' });
+  db.get(`SELECT value FROM system_settings WHERE key = 'email_attendance_alerts'`, (err, settingRow) => {
+    const emailAttendanceEnabled = settingRow ? settingRow.value === 'true' : true;
+    if (!emailAttendanceEnabled) {
+      return res.status(400).json({ error: 'Monthly attendance progress reports are disabled in settings' });
+    }
+
+    // Get previous month string in YYYY-MM format
+    const now = new Date();
+    let prevMonth = now.getMonth(); // 0-indexed, so current month index is actually previous month number!
+    let year = now.getFullYear();
+    if (prevMonth === 0) {
+      prevMonth = 12;
+      year -= 1;
+    }
+    const monthString = `${year}-${prevMonth.toString().padStart(2, '0')}`;
+    const monthName = new Date(year, prevMonth - 1).toLocaleString('default', { month: 'long' });
 
   // Query all active students
   db.all(`SELECT id, name, email, className FROM users WHERE role = 'student'`, [], async (err, studentsList) => {
@@ -608,6 +614,7 @@ app.post('/api/admin/attendance-report', authenticateToken, async (req, res) => 
 
     logAction('ATTENDANCE_REPORTS_SENT', `Triggered monthly attendance progress cards. Sent: ${sentCount}, Failed: ${failedCount}`);
     res.json({ success: true, sentCount, failedCount });
+    });
   });
 });
 
@@ -776,68 +783,72 @@ app.put('/api/fees/:id/pay', authenticateToken, (req, res) => {
 
 // Send automatic fee reminders to all students with pending fees
 app.post('/api/fees/remind-pending', async (req, res) => {
-  db.all(`SELECT fees.*, users.name, users.parentPhone, users.email FROM fees JOIN users ON fees.student_id = users.id WHERE fees.status != 'Paid'`, [], async (err, rows) => {
-    if (err) return res.status(500).json({ error: err.message });
-    
-    let sentCount = 0;
-    let failedCount = 0;
-    let emailSentCount = 0;
-    
-    for (const row of rows) {
-      const dueAmount = row.total - row.paid;
-      const message = `Dear Parent, this is a reminder from Aarambh that the tuition fee of Rs. ${dueAmount} for ${row.name} for the month of ${row.month || 'Current'} is currently pending. Please clear the dues at your earliest convenience. Thank you!`;
-      
-      // 1. Send via WhatsApp if phone exists
-      if (row.parentPhone) {
-        if (waStatus === 'CONNECTED' && waClient) {
-          try {
-            let phone = row.parentPhone.replace(/\D/g, '');
-            if (phone.length === 10) phone = `91${phone}`;
-            const chatId = `${phone}@c.us`;
-            
-            await waClient.sendMessage(chatId, message);
-            sentCount++;
-          } catch (e) {
-            console.error(`[WhatsApp Fee Reminder Error] for ${row.name}:`, e);
-            failedCount++;
-          }
-        } else {
-          // Simulated send if not connected
-          sentCount++;
-        }
-      }
+  db.get(`SELECT value FROM system_settings WHERE key = 'email_fee_alerts'`, (err, settingRow) => {
+    const emailFeeAlertsEnabled = settingRow ? settingRow.value === 'true' : true;
 
-      // 2. Send via Email if email exists
-      if (row.email && transporter) {
-        try {
-          const emailInfo = await transporter.sendMail({
-            from: '"Aarambh System" <admin@aarambh.edu>',
-            to: row.email,
-            subject: `⚠️ FEE DUE REMINDER: Aarambh Tuition - ${row.month || 'Current'} Month`,
-            text: message,
-            html: `<div style="font-family: sans-serif; padding: 20px; border: 1px solid #eaeaea; border-radius: 8px; max-width: 600px; margin: 0 auto;">
-                     <h2 style="color: #D0021B; margin-top: 0;">Tuition Fee Due Reminder</h2>
-                     <p>Dear Parent,</p>
-                     <p style="font-size: 15px; color: #333; line-height: 1.6;">
-                       This is a formal reminder that the tuition fee of <strong>Rs. ${dueAmount}</strong> for <strong>${row.name}</strong> for the month of <strong>${row.month || 'Current'}</strong> is currently pending.
-                     </p>
-                     <p>Please clear the outstanding dues at your earliest convenience.</p>
-                     <p>Thank you,<br/>Aarambh Management</p>
-                     <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
-                     <small style="color: #999;">This is an automated administrative reminder. Please do not reply directly to this email.</small>
-                   </div>`
-          });
-          const previewUrl = nodemailer.getTestMessageUrl(emailInfo);
-          console.log(`[EMAIL REMINDER SENT] to ${row.email}. Preview: ${previewUrl}`);
-          emailSentCount++;
-        } catch(e) {
-          console.error(`[Email Reminder Error] for ${row.name}:`, e);
+    db.all(`SELECT fees.*, users.name, users.parentPhone, users.email FROM fees JOIN users ON fees.student_id = users.id WHERE fees.status != 'Paid'`, [], async (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      
+      let sentCount = 0;
+      let failedCount = 0;
+      let emailSentCount = 0;
+      
+      for (const row of rows) {
+        const dueAmount = row.total - row.paid;
+        const message = `Dear Parent, this is a reminder from Aarambh that the tuition fee of Rs. ${dueAmount} for ${row.name} for the month of ${row.month || 'Current'} is currently pending. Please clear the dues at your earliest convenience. Thank you!`;
+        
+        // 1. Send via WhatsApp if phone exists
+        if (row.parentPhone) {
+          if (waStatus === 'CONNECTED' && waClient) {
+            try {
+              let phone = row.parentPhone.replace(/\D/g, '');
+              if (phone.length === 10) phone = `91${phone}`;
+              const chatId = `${phone}@c.us`;
+              
+              await waClient.sendMessage(chatId, message);
+              sentCount++;
+            } catch (e) {
+              console.error(`[WhatsApp Fee Reminder Error] for ${row.name}:`, e);
+              failedCount++;
+            }
+          } else {
+            // Simulated send if not connected
+            sentCount++;
+          }
+        }
+
+        // 2. Send via Email if email exists
+        if (emailFeeAlertsEnabled && row.email && transporter) {
+          try {
+            const emailInfo = await transporter.sendMail({
+              from: '"Aarambh System" <admin@aarambh.edu>',
+              to: row.email,
+              subject: `⚠️ FEE DUE REMINDER: Aarambh Tuition - ${row.month || 'Current'} Month`,
+              text: message,
+              html: `<div style="font-family: sans-serif; padding: 20px; border: 1px solid #eaeaea; border-radius: 8px; max-width: 600px; margin: 0 auto;">
+                       <h2 style="color: #D0021B; margin-top: 0;">Tuition Fee Due Reminder</h2>
+                       <p>Dear Parent,</p>
+                       <p style="font-size: 15px; color: #333; line-height: 1.6;">
+                         This is a formal reminder that the tuition fee of <strong>Rs. ${dueAmount}</strong> for <strong>${row.name}</strong> for the month of <strong>${row.month || 'Current'}</strong> is currently pending.
+                       </p>
+                       <p>Please clear the outstanding dues at your earliest convenience.</p>
+                       <p>Thank you,<br/>Aarambh Management</p>
+                       <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
+                       <small style="color: #999;">This is an automated administrative reminder. Please do not reply directly to this email.</small>
+                     </div>`
+            });
+            const previewUrl = nodemailer.getTestMessageUrl(emailInfo);
+            console.log(`[EMAIL REMINDER SENT] to ${row.email}.${previewUrl ? ` Preview: ${previewUrl}` : ''}`);
+            emailSentCount++;
+          } catch(e) {
+            console.error(`[Email Reminder Error] for ${row.name}:`, e);
+          }
         }
       }
-    }
-    
-    logAction('FEE_REMINDERS_SENT', `Triggered bulk reminders. WhatsApp Sent: ${sentCount}, Email Sent: ${emailSentCount}, Failed: ${failedCount}`);
-    res.json({ success: true, sentCount, emailSentCount, failedCount, simulated: waStatus !== 'CONNECTED' });
+      
+      logAction('FEE_REMINDERS_SENT', `Triggered bulk reminders. WhatsApp Sent: ${sentCount}, Email Sent: ${emailSentCount}, Failed: ${failedCount}`);
+      res.json({ success: true, sentCount, emailSentCount, failedCount, simulated: waStatus !== 'CONNECTED' });
+    });
   });
 });
 
@@ -906,6 +917,36 @@ app.post('/api/admin/smtp-settings', authenticateToken, async (req, res) => {
       logAction('SMTP_SETTINGS_UPDATED', `Admin updated SMTP email config to ${email} (Verified successfully)`);
       res.json({ success: true, verified: true, email });
     });
+  });
+});
+
+// Get System settings toggles
+app.get('/api/admin/system-settings', authenticateToken, (req, res) => {
+  if (req.user.role !== 'admin') return res.sendStatus(403);
+  db.all(`SELECT key, value FROM system_settings`, (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    const settingsObj = {};
+    rows.forEach(r => {
+      settingsObj[r.key] = r.value;
+    });
+    res.json({
+      emailFeeAlerts: settingsObj.email_fee_alerts === 'true',
+      emailAttendanceAlerts: settingsObj.email_attendance_alerts === 'true'
+    });
+  });
+});
+
+// Update System settings toggles
+app.post('/api/admin/system-settings', authenticateToken, (req, res) => {
+  if (req.user.role !== 'admin') return res.sendStatus(403);
+  const { emailFeeAlerts, emailAttendanceAlerts } = req.body;
+  
+  db.serialize(() => {
+    db.run(`INSERT OR REPLACE INTO system_settings (key, value) VALUES ('email_fee_alerts', ?)`, [emailFeeAlerts ? 'true' : 'false']);
+    db.run(`INSERT OR REPLACE INTO system_settings (key, value) VALUES ('email_attendance_alerts', ?)`, [emailAttendanceAlerts ? 'true' : 'false']);
+    
+    logAction('SYSTEM_SETTINGS_UPDATED', `Admin updated toggles: fee alerts=${emailFeeAlerts}, attendance reports=${emailAttendanceAlerts}`);
+    res.json({ success: true });
   });
 });
 
