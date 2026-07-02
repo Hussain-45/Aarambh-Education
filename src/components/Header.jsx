@@ -63,11 +63,10 @@ const Header = () => {
             type="text" 
             placeholder="Search students, classes..." 
             className="prof-input"
-            style={{ paddingLeft: '2.5rem', borderRadius: '20px', width: '250px' }}
+            style={{ paddingLeft: '1rem', borderRadius: '20px', width: '250px' }}
             value={searchVal}
             onChange={(e) => setSearchVal(e.target.value)}
           />
-          <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
           
           {searchVal && (
             <div className="prof-card" style={{
