@@ -600,6 +600,42 @@ export const AppProvider = ({ children }) => {
     return true;
   };
 
+  const sendFeeReminders = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/fees/remind-pending', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        logActivity('Fee Reminders', `Triggered bulk reminders. Sent: ${data.sentCount}, Failed: ${data.failedCount} (${data.simulated ? 'Simulated' : 'Real WhatsApp'})`);
+        addToast(`Sent ${data.sentCount} pending fee reminders via WhatsApp!`, 'success');
+        return data;
+      }
+    } catch (e) {
+      // Offline local simulation
+    }
+
+    // Local simulation fallback
+    const pendingFees = fees.filter(f => f.status !== 'Paid');
+    let sentCount = 0;
+    for (const fee of pendingFees) {
+      const student = students.find(s => s.id === fee.studentId);
+      const phone = student?.parentPhone || fee.parentPhone;
+      if (!phone) continue;
+
+      const dueAmount = fee.total - fee.paid;
+      const message = `Dear Parent, this is a reminder from Aarambh that the tuition fee of Rs. ${dueAmount} for ${student?.name || fee.name || 'your child'} for the month of ${fee.month || 'Current'} is currently pending. Please clear the dues at your earliest convenience. Thank you!`;
+      
+      await sendMessage(phone, 'Auto-WhatsApp', message);
+      sentCount++;
+    }
+
+    logActivity('Fee Reminders', `Triggered bulk reminders (Local Simulation). Sent: ${sentCount}`);
+    addToast(`Sent ${sentCount} pending fee reminders (Simulated)!`, 'success');
+    return { success: true, sentCount, simulated: true };
+  };
+
   // Student Roster Management
   const addStudent = async (param1, param2, param3, param4) => {
     let studentData = {};
@@ -846,7 +882,7 @@ export const AppProvider = ({ children }) => {
       theme, setTheme, 
       students, teachers, fees, messages, toasts, classes, expenses,
       assignments, submissions, calendarEvents, library, history, announcements, registrationRequests,
-      sendMessage, recordFeePayment, addToast, addStudent, removeStudent, removeBatch,
+      sendMessage, recordFeePayment, sendFeeReminders, addToast, addStudent, removeStudent, removeBatch,
       addAssignment, addLibraryMaterial, fetchHistory, updateProfile, addAnnouncement, deleteAnnouncement,
       addExpense, removeExpense, API_URL, authHeaders
     }}>

@@ -611,6 +611,43 @@ app.put('/api/fees/:id/pay', authenticateToken, (req, res) => {
   });
 });
 
+// Send automatic fee reminders to all students with pending fees
+app.post('/api/fees/remind-pending', async (req, res) => {
+  db.all(`SELECT fees.*, users.name, users.parentPhone FROM fees JOIN users ON fees.student_id = users.id WHERE fees.status != 'Paid'`, [], async (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    
+    let sentCount = 0;
+    let failedCount = 0;
+    
+    for (const row of rows) {
+      if (!row.parentPhone) continue;
+      
+      const dueAmount = row.total - row.paid;
+      const message = `Dear Parent, this is a reminder from Aarambh that the tuition fee of Rs. ${dueAmount} for ${row.name} for the month of ${row.month || 'Current'} is currently pending. Please clear the dues at your earliest convenience. Thank you!`;
+      
+      if (waStatus === 'CONNECTED' && waClient) {
+        try {
+          let phone = row.parentPhone.replace(/\D/g, '');
+          if (phone.length === 10) phone = `91${phone}`;
+          const chatId = `${phone}@c.us`;
+          
+          await waClient.sendMessage(chatId, message);
+          sentCount++;
+        } catch (e) {
+          console.error(`[WhatsApp Fee Reminder Error] for ${row.name}:`, e);
+          failedCount++;
+        }
+      } else {
+        // Simulated send if not connected
+        sentCount++;
+      }
+    }
+    
+    logAction('FEE_REMINDERS_SENT', `Triggered bulk reminders. Sent: ${sentCount}, Failed: ${failedCount}`);
+    res.json({ success: true, sentCount, failedCount, simulated: waStatus !== 'CONNECTED' });
+  });
+});
+
 // --- AUDIT HISTORY ROUTE ---
 app.get('/api/admin/history', authenticateToken, (req, res) => {
   if (req.user.role !== 'admin') return res.sendStatus(403);

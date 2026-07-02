@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { Users, ChevronRight } from 'lucide-react';
 
 const Fees = () => {
-  const { userRole, loggedInUser, classes, students } = useContext(AppContext);
+  const { userRole, loggedInUser, classes, students, sendFeeReminders } = useContext(AppContext);
   const navigate = useNavigate();
 
   const displayClasses = userRole === 'teacher' 
@@ -22,6 +22,15 @@ const Fees = () => {
         <div style={{ flex: 1 }}>
           <div className="flex-between" style={{ marginBottom: '1.5rem' }}>
             <h2 style={{ fontSize: '1.2rem', fontWeight: 600, margin: 0 }}>Select Batch for Fees</h2>
+            {userRole === 'admin' && (
+              <button 
+                onClick={sendFeeReminders} 
+                className="prof-btn" 
+                style={{ padding: '0.5rem 1rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
+                🔔 Auto-Send Pending Fee Reminders
+              </button>
+            )}
           </div>
           
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1.5rem' }}>
