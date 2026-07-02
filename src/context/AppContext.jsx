@@ -403,6 +403,7 @@ export const AppProvider = ({ children }) => {
       fatherName: reqData.fatherName,
       admission_number: reqData.admissionNumber || sequentialAdmissionNumber,
       parentPhone: reqData.phone,
+      birthdate: reqData.birthdate || null,
       status: 'pending',
       date: new Date().toLocaleDateString()
     };
@@ -479,7 +480,8 @@ export const AppProvider = ({ children }) => {
       fatherName: req.fatherName,
       username: req.username || req.name.toLowerCase().replace(/\s+/g, ''),
       admission_number: req.admission_number || sequentialAdmissionNumber,
-      email: req.email
+      email: req.email,
+      birthdate: req.birthdate
     };
     const updatedStudents = [...students, newStudent];
     setStudents(updatedStudents);
@@ -497,7 +499,8 @@ export const AppProvider = ({ children }) => {
       className: req.className,
       admission_number: newStudent.admission_number,
       fatherName: req.fatherName,
-      email: req.email
+      email: req.email,
+      birthdate: req.birthdate
     };
     localStorage.setItem('aarambh_users', JSON.stringify([...users, newUser]));
 
@@ -699,7 +702,7 @@ export const AppProvider = ({ children }) => {
   };
 
   // Student Roster Management
-  const addStudent = async (param1, param2, param3, param4, param5) => {
+  const addStudent = async (param1, param2, param3, param4, param5, param6) => {
     let studentData = {};
     if (typeof param1 === 'object' && param1 !== null) {
       studentData = param1;
@@ -709,7 +712,8 @@ export const AppProvider = ({ children }) => {
         class: param2,
         parentPhone: param3,
         fatherName: param4,
-        email: param5
+        email: param5,
+        birthdate: param6
       };
     }
 
@@ -725,7 +729,8 @@ export const AppProvider = ({ children }) => {
           className: studentData.class,
           parentPhone: studentData.parentPhone,
           fatherName: studentData.fatherName,
-          email: studentData.email
+          email: studentData.email,
+          birthdate: studentData.birthdate
         })
       });
       if (response.ok) {
@@ -744,6 +749,7 @@ export const AppProvider = ({ children }) => {
       parentPhone: studentData.parentPhone,
       fatherName: studentData.fatherName,
       email: studentData.email,
+      birthdate: studentData.birthdate,
       username: studentData.username || `stu_${id.toString().slice(-4)}`,
       admission_number: sequentialAdmissionNumber
     };
@@ -764,7 +770,8 @@ export const AppProvider = ({ children }) => {
       className: studentData.class,
       admission_number: newStudent.admission_number,
       fatherName: studentData.fatherName,
-      email: studentData.email
+      email: studentData.email,
+      birthdate: studentData.birthdate
     };
     localStorage.setItem('aarambh_users', JSON.stringify([...users, newUser]));
 

@@ -21,10 +21,11 @@ const Students = () => {
   const [newPhone, setNewPhone] = useState('');
   const [newFatherName, setNewFatherName] = useState('');
   const [newEmail, setNewEmail] = useState('');
+  const [newBirthdate, setNewBirthdate] = useState('');
 
   const handleExportCSV = () => {
-    const headers = ['ID', 'Name', 'Class', 'Parent Phone', 'Father Name', 'Email'];
-    const rows = students.map(s => [s.id, s.name, s.class, s.parentPhone, s.fatherName, s.email]);
+    const headers = ['ID', 'Name', 'Class', 'Parent Phone', 'Father Name', 'Email', 'Birthdate'];
+    const rows = students.map(s => [s.id, s.name, s.class, s.parentPhone, s.fatherName, s.email, s.birthdate]);
     exportToCSV('students_list', rows, headers);
   };
 
@@ -34,7 +35,7 @@ const Students = () => {
       return;
     }
     
-    addStudent(newName, newClass, newPhone, newFatherName, newEmail);
+    addStudent(newName, newClass, newPhone, newFatherName, newEmail, newBirthdate);
     setShowModal(false);
     
     // Reset form
@@ -43,6 +44,7 @@ const Students = () => {
     setNewPhone('');
     setNewFatherName('');
     setNewEmail('');
+    setNewBirthdate('');
   };
 
   return (
@@ -135,6 +137,16 @@ const Students = () => {
                 value={newEmail}
                 onChange={(e) => setNewEmail(e.target.value)}
               />
+              <div style={{ position: 'relative', marginTop: '1rem' }}>
+                <input 
+                  type="date" 
+                  placeholder="Student Birthdate" 
+                  className="prof-input" 
+                  value={newBirthdate}
+                  onChange={(e) => setNewBirthdate(e.target.value)}
+                />
+                <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '0.8rem', color: 'var(--text-muted)' }}>Birthdate</span>
+              </div>
               <div className="flex-between" style={{ marginTop: '1.5rem' }}>
                 <button onClick={() => setShowModal(false)} className="prof-btn prof-btn-secondary">Cancel</button>
                 <button onClick={handleAddStudent} className="prof-btn">Save Student</button>

@@ -252,14 +252,14 @@ app.post('/api/auth/register-admin', async (req, res) => {
 
 // Request Registration (Teacher & Student)
 app.post('/api/auth/request-register', async (req, res) => {
-  const { role, name, username, password, phone, className, admissionNumber, fees, fatherName, email } = req.body;
+  const { role, name, username, password, phone, className, admissionNumber, fees, fatherName, email, birthdate } = req.body;
   
   const hashedPassword = await bcrypt.hash(password, 10);
   const formattedName = name ? name.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ') : name;
   const formattedFatherName = fatherName ? fatherName.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ') : null;
 
-  db.run(`INSERT INTO registration_requests (role, name, username, password, parentPhone, className, admission_number, fees, status, fatherName, email) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)`, 
-    [role, formattedName, username, hashedPassword, phone, className, admissionNumber || null, fees || 0, formattedFatherName, email || null], 
+  db.run(`INSERT INTO registration_requests (role, name, username, password, parentPhone, className, admission_number, fees, status, fatherName, email, birthdate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?)`, 
+    [role, formattedName, username, hashedPassword, phone, className, admissionNumber || null, fees || 0, formattedFatherName, email || null, birthdate || null], 
     function(err) {
       if (err) return res.status(500).json({ error: err.message });
       
@@ -309,8 +309,8 @@ app.post('/api/admin/requests/:id/approve', authenticateToken, (req, res) => {
     }
 
     function insertUser(admNum) {
-      db.run(`INSERT INTO users (name, username, password, role, parentPhone, className, admission_number, fatherName, email) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
-        [request.name || request.username, request.username, request.password, request.role, request.parentPhone, request.className, admNum, request.fatherName, request.email], 
+      db.run(`INSERT INTO users (name, username, password, role, parentPhone, className, admission_number, fatherName, email, birthdate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
+        [request.name || request.username, request.username, request.password, request.role, request.parentPhone, request.className, admNum, request.fatherName, request.email, request.birthdate], 
         function(err) {
           if (err) return res.status(500).json({ error: err.message });
           const newUserId = this.lastID;
@@ -404,7 +404,7 @@ app.get('/api/students', authenticateToken, (req, res) => {
 // Add a student (Admin only)
 app.post('/api/students', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') return res.sendStatus(403);
-  const { name, className, parentPhone, fatherName, email } = req.body;
+  const { name, className, parentPhone, fatherName, email, birthdate } = req.body;
   const hashedPassword = await bcrypt.hash('pass', 10); // default password
   const formattedName = name ? name.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ') : name;
   const formattedFatherName = fatherName ? fatherName.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ') : null;
@@ -414,8 +414,8 @@ app.post('/api/students', authenticateToken, async (req, res) => {
     const nextNum = (row && row.max_num ? row.max_num : 0) + 1;
     const admissionNumber = `AES${nextNum}`;
     
-    db.run(`INSERT INTO users (name, role, className, parentPhone, password, admission_number, fatherName, email) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, 
-      [formattedName, 'student', className, parentPhone, hashedPassword, admissionNumber, formattedFatherName, email || null], 
+    db.run(`INSERT INTO users (name, role, className, parentPhone, password, admission_number, fatherName, email, birthdate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
+      [formattedName, 'student', className, parentPhone, hashedPassword, admissionNumber, formattedFatherName, email || null, birthdate || null], 
       function(err) {
         if (err) return res.status(500).json({ error: err.message });
         const newUserId = this.lastID;
@@ -750,8 +750,8 @@ app.put('/api/fees/:id/pay', authenticateToken, (req, res) => {
   const { amount, paymentMode, paymentDate, month } = req.body;
   
   const query = month 
-    ? `SELECT fees.*, users.name, users.parentPhone FROM fees JOIN users ON fees.student_id = users.id WHERE fees.student_id = ? AND fees.month = ?`
-    : `SELECT fees.*, users.name, users.parentPhone FROM fees JOIN users ON fees.student_id = users.id WHERE fees.student_id = ?`;
+    ? `SELECT fees.*, users.name, users.parentPhone, users.email, users.className FROM fees JOIN users ON fees.student_id = users.id WHERE fees.student_id = ? AND fees.month = ?`
+    : `SELECT fees.*, users.name, users.parentPhone, users.email, users.className FROM fees JOIN users ON fees.student_id = users.id WHERE fees.student_id = ?`;
   const params = month ? [studentId, month] : [studentId];
   
   db.get(query, params, (err, fee) => {
@@ -774,6 +774,64 @@ app.put('/api/fees/:id/pay', authenticateToken, (req, res) => {
       
       if (fee.parentPhone) {
         sendAutoSms(fee.parentPhone, `Dear Parent, we have received a payment of Rs. ${amount} for ${fee.name} for the month of ${month || 'Current'}. Thank you! - Aarambh`);
+      }
+
+      if (fee.email && transporter) {
+        const receiptNo = `REC-${Date.now().toString().slice(-6)}`;
+        transporter.sendMail({
+          from: '"Aarambh Invoice Service" <billing@aarambh.edu>',
+          to: fee.email,
+          subject: `🧾 PAYMENT RECEIPT: ${fee.name} - ${month || 'Current'} Month`,
+          text: `Dear Parent,\n\nWe have successfully received a tuition fee payment of Rs. ${amount} for ${fee.name} for the month of ${month || 'Current'}.\n\nReceipt Details:\n- Receipt No: ${receiptNo}\n- Amount: Rs. ${amount}\n- Payment Mode: ${paymentMode || 'Cash'}\n- Payment Date: ${paymentDate || new Date().toLocaleDateString()}\n\nThank you for choosing Aarambh!\n\nBest regards,\nAarambh Accounts`,
+          html: `<div style="font-family: sans-serif; padding: 25px; border: 1px solid #eaeaea; border-radius: 8px; max-width: 600px; margin: 0 auto; background-color: #fafafa;">
+                   <div style="text-align: center; border-bottom: 2px solid #4A90E2; padding-bottom: 15px; margin-bottom: 20px;">
+                     <h2 style="color: #4A90E2; margin: 0; font-size: 24px;">Aarambh Tuition Centre</h2>
+                     <small style="color: #666; text-transform: uppercase; letter-spacing: 1px;">Official Payment Receipt</small>
+                   </div>
+                   
+                   <p>Dear Parent,</p>
+                   <p>Thank you for your payment. We have successfully processed the tuition fee for the student.</p>
+                   
+                   <div style="background-color: #ffffff; padding: 15px; border-radius: 6px; border: 1px dashed #ddd; margin: 20px 0;">
+                     <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                       <tr>
+                         <td style="padding: 6px 0; color: #666;"><strong>Receipt No:</strong></td>
+                         <td style="padding: 6px 0; text-align: right;">${receiptNo}</td>
+                       </tr>
+                       <tr>
+                         <td style="padding: 6px 0; color: #666;"><strong>Student Name:</strong></td>
+                         <td style="padding: 6px 0; text-align: right;"><strong>${fee.name}</strong></td>
+                       </tr>
+                       <tr>
+                         <td style="padding: 6px 0; color: #666;"><strong>Class/Batch:</strong></td>
+                         <td style="padding: 6px 0; text-align: right;">${fee.className || 'General'}</td>
+                       </tr>
+                       <tr>
+                         <td style="padding: 6px 0; color: #666;"><strong>For Month:</strong></td>
+                         <td style="padding: 6px 0; text-align: right;">${month || 'Current'}</td>
+                       </tr>
+                       <tr style="border-top: 1px solid #eee; margin-top: 10px;">
+                         <td style="padding: 10px 0; color: #666; font-size: 16px;"><strong>Amount Paid:</strong></td>
+                         <td style="padding: 10px 0; text-align: right; font-size: 18px; color: #2ecc71;"><strong>Rs. ${amount}</strong></td>
+                       </tr>
+                       <tr>
+                         <td style="padding: 6px 0; color: #666;"><strong>Payment Mode:</strong></td>
+                         <td style="padding: 6px 0; text-align: right;">${paymentMode || 'Cash'}</td>
+                       </tr>
+                       <tr>
+                         <td style="padding: 6px 0; color: #666;"><strong>Payment Date:</strong></td>
+                         <td style="padding: 6px 0; text-align: right;">${paymentDate || new Date().toLocaleDateString()}</td>
+                       </tr>
+                     </table>
+                   </div>
+                   
+                   <p style="text-align: center; color: #777; font-size: 13px; margin-top: 25px;">
+                     If you have any billing queries, please contact the administration directly.
+                   </p>
+                   <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
+                   <small style="color: #999; display: block; text-align: center;">This is a system generated billing statement. Please do not reply directly to this mail.</small>
+                 </div>`
+        }).catch(err => console.error('[Fee Invoice Email Error]', err.message));
       }
       
       res.json({ success: true, paid: newPaid, status: newStatus, paymentMode, paymentDate });
@@ -1514,6 +1572,55 @@ const checkDatabaseStorageSize = () => {
 setInterval(checkDatabaseStorageSize, 3 * 60 * 60 * 1000);
 // Also trigger alert check once on boot
 setTimeout(checkDatabaseStorageSize, 10000);
+const checkAndSendBirthdayGreetings = () => {
+  const today = new Date();
+  const currentMonthDay = `${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  
+  console.log(`[Birthday Engine] Checking greetings for day-month: ${currentMonthDay}`);
+  
+  db.all(`SELECT id, name, email, birthdate FROM users WHERE role = 'student' AND email IS NOT NULL AND birthdate IS NOT NULL`, [], (err, studentsList) => {
+    if (err || !studentsList) return;
+    
+    studentsList.forEach(student => {
+      // birthdate format: YYYY-MM-DD
+      const parts = student.birthdate.split('-');
+      if (parts.length === 3) {
+        const studentMonthDay = `${parts[1]}-${parts[2]}`;
+        if (studentMonthDay === currentMonthDay && transporter) {
+          console.log(`[Birthday Engine] Triggering greeting email to ${student.name} (${student.email})`);
+          transporter.sendMail({
+            from: '"Aarambh Management" <admin@aarambh.edu>',
+            to: student.email,
+            subject: `🎂 Happy Birthday, ${student.name}! 🌟`,
+            text: `Dear ${student.name},\n\nHappy Birthday from all of us at Aarambh! 🥳✨\n\nMay this special day bring you loads of happiness, love, and success in everything you do. Keep shining and learning!\n\nBest wishes,\nTeam Aarambh`,
+            html: `<div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 30px; border: 1px solid #eaeaea; border-radius: 12px; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); text-align: center;">
+                     <div style="background-color: #ffffff; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+                       <h1 style="color: #4A90E2; margin-top: 0; font-size: 28px;">🎉 Happy Birthday, ${student.name}! 🎉</h1>
+                       <div style="font-size: 50px; margin: 20px 0;">🎂🎈✨</div>
+                       <p style="font-size: 16px; color: #333; line-height: 1.6;">
+                         Wishing you a fantastic day filled with joy, laughter, and your favorite treats! 
+                         We are extremely proud to have you as part of the Aarambh family.
+                       </p>
+                       <p style="font-size: 16px; color: #333; font-weight: bold; margin-top: 20px;">
+                         Keep shining, learning, and reaching for the stars! 🌟
+                       </p>
+                       <hr style="border: 0; border-top: 1px solid #eee; margin: 25px 0;" />
+                       <p style="margin: 0; color: #777; font-size: 14px;">With warm regards,</p>
+                       <p style="margin: 5px 0 0 0; color: #4A90E2; font-weight: bold; font-size: 16px;">Team Aarambh</p>
+                     </div>
+                   </div>`
+          }).catch(sendErr => console.error(`[Birthday Email Error] for ${student.name}:`, sendErr.message));
+        }
+      }
+    });
+  });
+};
+
+// Check student birthdays once daily
+setInterval(checkAndSendBirthdayGreetings, 24 * 60 * 60 * 1000);
+// Also trigger alert check once on boot after 8 seconds
+setTimeout(checkAndSendBirthdayGreetings, 8000);
+
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });

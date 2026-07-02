@@ -22,6 +22,7 @@ const Login = () => {
   const [fees, setFees] = useState(''); // Initial fee amount
   const [fatherName, setFatherName] = useState(''); // Student's Father Name
   const [email, setEmail] = useState(''); // Student/User Email Address
+  const [birthdate, setBirthdate] = useState(''); // Student Birthdate
 
   const { loginAdmin, registerAdmin, loginTeacher, loginStudent, requestRegistration, classes, addToast } = useContext(AppContext);
   const navigate = useNavigate();
@@ -47,6 +48,7 @@ const Login = () => {
     setFees('');
     setFatherName('');
     setEmail('');
+    setBirthdate('');
 
     const isRemember = localStorage.getItem('aarambh_remember_me') !== 'false';
     setRememberMe(isRemember);
@@ -152,7 +154,8 @@ const Login = () => {
             admissionNumber: admissionNumber || null,
             fees: targetTab === 'student' && fees ? parseInt(fees) : 0,
             fatherName: targetTab === 'student' ? fatherName : null,
-            email: email || null
+            email: email || null,
+            birthdate: birthdate || null
           };
           
           const success = await requestRegistration(data);
@@ -315,6 +318,20 @@ const Login = () => {
             </div>
           )}
 
+          {isRegisterMode && activeTab === 'student' && (
+            <div style={{ position: 'relative' }}>
+              <input 
+                type="date" 
+                placeholder="Student Birthdate"
+                value={birthdate}
+                onChange={(e) => setBirthdate(e.target.value)}
+                className="prof-input"
+                required
+                style={{ paddingLeft: '12px' }}
+              />
+              <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '0.8rem', color: 'var(--text-muted)' }}>Birthdate</span>
+            </div>
+          )}
           {isRegisterMode && activeTab === 'student' && (
             <div style={{ position: 'relative' }}>
               <User size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />

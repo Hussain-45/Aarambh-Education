@@ -18,6 +18,7 @@ const ClassDetails = () => {
   const [newStudentName, setNewStudentName] = useState('');
   const [newStudentPhone, setNewStudentPhone] = useState('');
   const [newStudentEmail, setNewStudentEmail] = useState('');
+  const [newStudentBirthdate, setNewStudentBirthdate] = useState('');
   
   const [selectedReceiptFee, setSelectedReceiptFee] = useState(null);
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
@@ -45,11 +46,12 @@ const ClassDetails = () => {
 
   const handleAddStudent = async () => {
     if (!newStudentName || !newStudentPhone) return;
-    await addStudent(newStudentName, classData.name, newStudentPhone, null, newStudentEmail);
+    await addStudent(newStudentName, classData.name, newStudentPhone, null, newStudentEmail, newStudentBirthdate);
     setShowAddStudent(false);
     setNewStudentName('');
     setNewStudentPhone('');
     setNewStudentEmail('');
+    setNewStudentBirthdate('');
   };
 
   const handleMarkAttendance = async (student, status) => {
@@ -293,6 +295,10 @@ const ClassDetails = () => {
               <input type="text" placeholder="Student Full Name" value={newStudentName} onChange={e => setNewStudentName(e.target.value)} className="prof-input" style={{ marginTop: '1rem' }}/>
               <input type="text" placeholder="Parent Phone Number" value={newStudentPhone} onChange={e => setNewStudentPhone(e.target.value)} className="prof-input" style={{ marginTop: '1rem' }}/>
               <input type="email" placeholder="Parent Email Address" value={newStudentEmail} onChange={e => setNewStudentEmail(e.target.value)} className="prof-input" style={{ marginTop: '1rem' }}/>
+              <div style={{ position: 'relative', marginTop: '1rem' }}>
+                <input type="date" placeholder="Student Birthdate" value={newStudentBirthdate} onChange={e => setNewStudentBirthdate(e.target.value)} className="prof-input" style={{ width: '100%' }}/>
+                <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '0.8rem', color: 'var(--text-muted)' }}>Birthdate</span>
+              </div>
               
               <div className="flex-between" style={{ marginTop: '1.5rem' }}>
                 <button onClick={() => setShowAddStudent(false)} className="prof-btn prof-btn-outline">Cancel</button>

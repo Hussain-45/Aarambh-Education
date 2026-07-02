@@ -21,7 +21,8 @@ const db = new sqlite3.Database(dbPath, (err) => {
         className TEXT,
         admission_number TEXT,
         email TEXT,
-        fatherName TEXT
+        fatherName TEXT,
+        birthdate TEXT
       )`);
 
       // Migration: Add email & fatherName columns if not exists
@@ -29,6 +30,9 @@ const db = new sqlite3.Database(dbPath, (err) => {
         // Ignore error if column already exists
       });
       db.run(`ALTER TABLE users ADD COLUMN fatherName TEXT`, (err) => {
+        // Ignore error if column already exists
+      });
+      db.run(`ALTER TABLE users ADD COLUMN birthdate TEXT`, (err) => {
         // Ignore error if column already exists
       });
 
@@ -104,7 +108,8 @@ const db = new sqlite3.Database(dbPath, (err) => {
         fees INTEGER,
         status TEXT DEFAULT 'pending',
         fatherName TEXT,
-        email TEXT
+        email TEXT,
+        birthdate TEXT
       )`);
 
       // Migration: Add fatherName to registration_requests if not exists
@@ -112,6 +117,9 @@ const db = new sqlite3.Database(dbPath, (err) => {
         // Ignore error if column already exists
       });
       db.run(`ALTER TABLE registration_requests ADD COLUMN email TEXT`, (err) => {
+        // Ignore error if column already exists
+      });
+      db.run(`ALTER TABLE registration_requests ADD COLUMN birthdate TEXT`, (err) => {
         // Ignore error if column already exists
       });
 
