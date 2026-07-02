@@ -350,17 +350,26 @@ export const AppProvider = ({ children }) => {
     addToast('Logged out successfully.');
   };
 
-  // Student/Teacher Registrations Request (Auto-Approve for seamless local database creation)
+  // Student/Teacher Registrations Request (Now properly routes to Pending Approvals list)
   const requestRegistration = async (reqData) => {
     const cleanUsername = (reqData.username || reqData.name || '').trim().toLowerCase();
+    
+    // Check if username already exists in approved users database
     const users = JSON.parse(localStorage.getItem('aarambh_users') || '[]');
-
     if (users.some(u => (u.username || '').trim().toLowerCase() === cleanUsername)) {
-      addToast('Username already exists', 'danger');
+      addToast('Username/Name already exists in system.', 'danger');
       return false;
     }
 
-    // Generate sequential admission number for student registration
+    // Check if username already exists in pending requests database
+    const requests = JSON.parse(localStorage.getItem('aarambh_requests') || '[]');
+    if (requests.some(r => (r.username || r.name || '').trim().toLowerCase() === cleanUsername)) {
+      addToast('A pending registration request already exists for this account.', 'danger');
+      return false;
+    }
+
+    // Generate unique ID and sequential admission number
+    const id = Date.now();
     let sequentialAdmissionNumber = null;
     if (reqData.role === 'student') {
       const currentStudentsList = JSON.parse(localStorage.getItem('aarambh_students') || '[]');
@@ -376,68 +385,27 @@ export const AppProvider = ({ children }) => {
       sequentialAdmissionNumber = `AES${nextNum}`;
     }
 
-    const newUser = {
-      id: Date.now(),
+    // Create pending request object
+    const newRequest = {
+      id,
       name: reqData.name,
       username: reqData.username || cleanUsername,
       password: reqData.password,
       role: reqData.role,
       email: reqData.role === 'teacher' ? `${cleanUsername}@aarambh.edu` : null,
-      class: reqData.className,
+      className: reqData.className,
       fatherName: reqData.fatherName,
-      admission_number: reqData.admissionNumber || sequentialAdmissionNumber || `AES${Date.now().toString().slice(-4)}`,
-      parentPhone: reqData.phone
+      admission_number: reqData.admissionNumber || sequentialAdmissionNumber,
+      parentPhone: reqData.phone,
+      status: 'pending',
+      date: new Date().toLocaleDateString()
     };
 
-    const updatedUsers = [...users, newUser];
-    localStorage.setItem('aarambh_users', JSON.stringify(updatedUsers));
+    const updatedRequests = [...requests, newRequest];
+    localStorage.setItem('aarambh_requests', JSON.stringify(updatedRequests));
+    setRegistrationRequests(updatedRequests);
 
-    // Expose student-specific properties
-    if (reqData.role === 'student') {
-      const defaultStudents = JSON.parse(localStorage.getItem('aarambh_students') || '[]');
-      localStorage.setItem('aarambh_students', JSON.stringify([...defaultStudents, {
-        id: newUser.id,
-        name: newUser.name,
-        class: newUser.class,
-        parentPhone: newUser.parentPhone,
-        fatherName: newUser.fatherName,
-        username: newUser.username,
-        admission_number: newUser.admission_number
-      }]));
-      setStudents(JSON.parse(localStorage.getItem('aarambh_students')));
-
-      // Auto-generate 12 months fee book
-      const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-      const defaultFees = JSON.parse(localStorage.getItem('aarambh_fees') || '[]');
-      const newFees = months.map((month, idx) => ({
-        id: Date.now() + idx,
-        studentId: newUser.id,
-        studentName: newUser.name,
-        class: newUser.class,
-        month,
-        total: reqData.fees || 2000,
-        paid: 0,
-        status: 'Unpaid',
-        paymentDate: null
-      }));
-      localStorage.setItem('aarambh_fees', JSON.stringify([...defaultFees, ...newFees]));
-      setFees(JSON.parse(localStorage.getItem('aarambh_fees')));
-    }
-
-    // Expose teacher-specific properties
-    if (reqData.role === 'teacher') {
-      const defaultTeachers = JSON.parse(localStorage.getItem('aarambh_teachers') || '[]');
-      localStorage.setItem('aarambh_teachers', JSON.stringify([...defaultTeachers, {
-        id: newUser.id,
-        name: newUser.name,
-        email: newUser.email,
-        username: newUser.username,
-        assignedClasses: ['10th Math', '10th Science']
-      }]));
-      setTeachers(JSON.parse(localStorage.getItem('aarambh_teachers')));
-    }
-
-    addToast('Account registered successfully! You can log in now.', 'success');
+    addToast('Registration request submitted! Please wait for admin approval.', 'success');
     return true;
   };
 
