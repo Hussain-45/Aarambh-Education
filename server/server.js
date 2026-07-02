@@ -697,26 +697,61 @@ app.get('/api/admin/smtp-settings', authenticateToken, (req, res) => {
 });
 
 // Update SMTP Settings
-app.post('/api/admin/smtp-settings', authenticateToken, (req, res) => {
+// Update SMTP Settings with verification check
+app.post('/api/admin/smtp-settings', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') return res.sendStatus(403);
   const { email, password } = req.body;
   if (!email) return res.status(400).json({ error: 'Email is required' });
-  
-  db.serialize(() => {
-    db.run(`INSERT OR REPLACE INTO system_settings (key, value) VALUES ('email_user', ?)`, [email]);
-    if (password) {
-      db.run(`INSERT OR REPLACE INTO system_settings (key, value) VALUES ('email_pass', ?)`, [password]);
-      initializeTransporter(email, password);
-    } else {
-      // Just reload with old password but new email
-      db.get(`SELECT value FROM system_settings WHERE key = 'email_pass'`, (err, row) => {
-        const oldPass = row ? row.value : 'Neerajsir';
-        initializeTransporter(email, oldPass);
+
+  // Get the password to verify (either new password or existing one from DB)
+  let targetPassword = password;
+  if (!targetPassword) {
+    try {
+      const dbPassRow = await new Promise((resolve, reject) => {
+        db.get(`SELECT value FROM system_settings WHERE key = 'email_pass'`, (err, row) => {
+          if (err) reject(err);
+          else resolve(row);
+        });
+      });
+      targetPassword = dbPassRow ? dbPassRow.value : 'Neerajsir';
+    } catch(e) {
+      targetPassword = 'Neerajsir';
+    }
+  }
+
+  // Create temporary transporter to test connection
+  const testTransporter = nodemailer.createTransport({
+    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
+    auth: {
+      user: email,
+      pass: targetPassword
+    }
+  });
+
+  // Verify connection
+  testTransporter.verify((error, success) => {
+    if (error) {
+      console.error('[SMTP Settings Verification Failed]', error);
+      return res.status(400).json({
+        success: false,
+        verified: false,
+        error: `Authentication failed: ${error.message}. Make sure App Passwords are created and 2-Step Verification is active on your Google account.`
       });
     }
-    
-    logAction('SMTP_SETTINGS_UPDATED', `Admin updated SMTP email config to ${email}`);
-    res.json({ success: true, email });
+
+    // Verification succeeded! Now save to DB
+    db.serialize(() => {
+      db.run(`INSERT OR REPLACE INTO system_settings (key, value) VALUES ('email_user', ?)`, [email]);
+      if (password) {
+        db.run(`INSERT OR REPLACE INTO system_settings (key, value) VALUES ('email_pass', ?)`, [password]);
+      }
+      initializeTransporter(email, targetPassword);
+      logAction('SMTP_SETTINGS_UPDATED', `Admin updated SMTP email config to ${email} (Verified successfully)`);
+      res.json({ success: true, verified: true, email });
+    });
   });
 });
 

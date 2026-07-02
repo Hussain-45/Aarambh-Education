@@ -55,21 +55,23 @@ const Settings = () => {
 
   const handleSaveSmtpSettings = async (e) => {
     e.preventDefault();
+    addToast('Verifying Gmail link... Please wait.', 'info');
     try {
       const res = await fetch(`${API_URL}/admin/smtp-settings`, {
         method: 'POST',
         headers: authHeaders,
         body: JSON.stringify({ email: smtpEmail, password: smtpPassword })
       });
+      const data = await res.json();
       if (res.ok) {
-        addToast('SMTP settings updated successfully!', 'success');
+        addToast('Gmail Account Linked & Verified successfully!', 'success');
         setSmtpPassword('');
       } else {
-        addToast('Failed to update SMTP settings', 'danger');
+        addToast(data.error || 'Failed to authenticate and link Gmail.', 'danger');
       }
     } catch (e) {
       localStorage.setItem('aarambh_smtp_email', smtpEmail);
-      addToast('SMTP configuration simulated locally!', 'success');
+      addToast('SMTP configuration simulated locally in offline mode!', 'success');
     }
   };
 
