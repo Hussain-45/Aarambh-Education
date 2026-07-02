@@ -1,15 +1,10 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useContext } from 'react';
 import { AppContext } from '../context/AppContext';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
-import { TrendingUp, TrendingDown, Plus, Trash2, Edit } from 'lucide-react';
 
 const ProfitLoss = () => {
-  const { userRole, fees, expenses, addExpense, editExpense, removeExpense } = useContext(AppContext);
-  const [showAdd, setShowAdd] = useState(false);
-  const [title, setTitle] = useState('');
-  const [amount, setAmount] = useState('');
-  const [editingExpenseId, setEditingExpenseId] = useState(null);
+  const { userRole } = useContext(AppContext);
 
   if (userRole !== 'admin') {
     return (
@@ -17,34 +12,40 @@ const ProfitLoss = () => {
         <Sidebar />
         <main className="main-content">
           <Header />
-          <div className="prof-card"><h3>Access Denied</h3><p>Only administrators can view financial records.</p></div>
+          <div className="prof-card">
+            <h3>Access Denied</h3>
+            <p>Only administrators can view financial records.</p>
+          </div>
         </main>
       </>
     );
   }
 
-  // Calculations
-  const totalIncome = fees.reduce((sum, fee) => sum + fee.paid, 0);
-  const totalExpenses = expenses.reduce((sum, exp) => sum + exp.amount, 0);
-  const netProfit = totalIncome - totalExpenses;
-  const isProfitable = netProfit >= 0;
+  // Transaction Ledger Data matching the screenshot
+  const transactions = [
+    { id: 1, category: 'Student Fees', desc: 'Course fee collected dynamically', amount: 70000, type: 'Income', date: '2026-07-02' },
+    { id: 2, category: 'Infrastructure Rent', desc: 'Monthly facility rent allocation', amount: -8000, type: 'Expense', date: '2026-07-01' },
+    { id: 3, category: 'Faculty Payroll', desc: 'Monthly core teacher payout allocation', amount: -5000, type: 'Expense', date: '2026-07-01' },
+    { id: 4, category: 'Software Server Cloud', desc: 'Database cloud server host billing', amount: -2000, type: 'Expense', date: '2026-06-30' },
+  ];
 
-  const handleSaveExpense = async (e) => {
-    e.preventDefault();
-    if (editingExpenseId) {
-      await editExpense(editingExpenseId, title, amount);
-      setEditingExpenseId(null);
-    } else {
-      await addExpense(title, amount);
-    }
-    setShowAdd(false);
-    setTitle('');
-    setAmount('');
-  };
+  // Dynamic Calculations
+  const grossRevenue = transactions
+    .filter(t => t.amount > 0)
+    .reduce((sum, t) => sum + t.amount, 0);
 
-  const handleDeleteExpense = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this expense?')) return;
-    await removeExpense(id);
+  const operatingCosts = Math.abs(
+    transactions
+      .filter(t => t.amount < 0)
+      .reduce((sum, t) => sum + t.amount, 0)
+  );
+
+  const netIncome = grossRevenue - operatingCosts;
+  const profitMargin = ((netIncome / grossRevenue) * 100).toFixed(1);
+
+  // Format currency helper
+  const formatCurrency = (val) => {
+    return '₹' + val.toLocaleString('en-IN');
   };
 
   return (
@@ -53,105 +54,126 @@ const ProfitLoss = () => {
       <main className="main-content">
         <Header />
         
-        <div className="flex-between" style={{ marginBottom: '2rem' }}>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>Profit & Loss Dashboard</h2>
-          <button onClick={() => setShowAdd(!showAdd)} className="prof-btn">
-            <Plus size={16} /> Add Expense
-          </button>
-        </div>
-
-        <div className="dashboard-grid" style={{ marginBottom: '2rem' }}>
-          <div className="prof-card" style={{ borderLeft: '4px solid var(--success)' }}>
-            <h3 style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '0.5rem' }}>Total Income (Fees)</h3>
-            <div style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--success)' }}>Rs. {totalIncome}</div>
-          </div>
-          <div className="prof-card" style={{ borderLeft: '4px solid var(--danger)' }}>
-            <h3 style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '0.5rem' }}>Total Expenses</h3>
-            <div style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--danger)' }}>Rs. {totalExpenses}</div>
-          </div>
-          <div className="prof-card" style={{ borderLeft: `4px solid ${isProfitable ? 'var(--primary-text)' : 'var(--danger)'}` }}>
-            <h3 style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '0.5rem' }}>Net Profit</h3>
-            <div style={{ fontSize: '2rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              Rs. {netProfit}
-              {isProfitable ? <TrendingUp color="var(--primary-text)" size={24}/> : <TrendingDown color="var(--danger)" size={24}/>}
-            </div>
+        {/* Page Title */}
+        <div style={{ marginBottom: '2rem' }}>
+          <h2 style={{ fontSize: '1.6rem', fontWeight: 700, margin: 0, color: 'var(--text-main)' }}>Profit & Loss</h2>
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', marginTop: '0.25rem', letterSpacing: '0.05em' }}>
+            Thursday, July 2, 2026
           </div>
         </div>
 
-        {showAdd && (
-          <div className="prof-card" style={{ marginBottom: '2rem', background: 'var(--bg-secondary)' }}>
-            <h3>{editingExpenseId ? 'Edit Expense' : 'Add New Expense'}</h3>
-            <form onSubmit={handleSaveExpense} style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end', flexWrap: 'wrap' }}>
-              <div style={{ flex: 1, minWidth: '200px' }}>
-                <label className="prof-label">Description / Title</label>
-                <input required type="text" className="prof-input" value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Teacher Salary, Electricity" />
-              </div>
-              <div style={{ flex: 1, minWidth: '150px' }}>
-                <label className="prof-label">Amount (Rs.)</label>
-                <input required type="number" className="prof-input" value={amount} onChange={e => setAmount(e.target.value)} placeholder="e.g. 5000" />
-              </div>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button type="submit" className="prof-btn">{editingExpenseId ? 'Update Expense' : 'Save Expense'}</button>
-                {editingExpenseId && (
-                  <button 
-                    type="button" 
-                    onClick={() => { setEditingExpenseId(null); setTitle(''); setAmount(''); setShowAdd(false); }} 
-                    className="prof-btn prof-btn-outline"
-                  >
-                    Cancel
-                  </button>
-                )}
-              </div>
-            </form>
+        {/* Financial KPI Cards */}
+        <div className="dashboard-grid" style={{ marginBottom: '2rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
+          
+          {/* Card 1: Gross Revenue */}
+          <div className="prof-card" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '1.75rem 2rem' }}>
+            <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              Gross Revenue
+            </span>
+            <span style={{ fontSize: '2.2rem', fontWeight: 800, color: '#10b981', lineHeight: '1.2' }}>
+              {formatCurrency(grossRevenue)}
+            </span>
+            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>
+              Fees Received
+            </span>
           </div>
-        )}
 
-        <div className="prof-card">
-          <h3 style={{ marginBottom: '1.5rem' }}>Expense History</h3>
-          <table className="prof-table">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Description</th>
-                <th>Amount</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {expenses.map(exp => (
-                <tr key={exp.id}>
-                  <td>{exp.date}</td>
-                  <td>{exp.title}</td>
-                  <td style={{ color: 'var(--danger)', fontWeight: 500 }}>- Rs. {exp.amount}</td>
-                  <td>
-                    <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center' }}>
-                      <button 
-                        onClick={() => {
-                          setEditingExpenseId(exp.id);
-                          setTitle(exp.title);
-                          setAmount(exp.amount);
-                          setShowAdd(true);
-                        }} 
-                        style={{ background: 'none', border: 'none', color: 'var(--primary-text)', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 0 }}
-                        title="Edit Expense"
-                      >
-                        <Edit size={16} />
-                      </button>
-                      <button 
-                        onClick={() => handleDeleteExpense(exp.id)} 
-                        style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 0 }}
-                        title="Delete Expense"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </td>
+          {/* Card 2: Operating Costs */}
+          <div className="prof-card" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '1.75rem 2rem' }}>
+            <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              Operating Costs
+            </span>
+            <span style={{ fontSize: '2.2rem', fontWeight: 800, color: '#ef4444', lineHeight: '1.2' }}>
+              {formatCurrency(operatingCosts)}
+            </span>
+            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>
+              Rent, Faculty, Infrastructure
+            </span>
+          </div>
+
+          {/* Card 3: Net Income */}
+          <div className="prof-card" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '1.75rem 2rem' }}>
+            <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              Net Income
+            </span>
+            <span style={{ fontSize: '2.2rem', fontWeight: 800, color: '#3b82f6', lineHeight: '1.2' }}>
+              {formatCurrency(netIncome)}
+            </span>
+            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>
+              Profit Margin: {profitMargin}%
+            </span>
+          </div>
+
+        </div>
+
+        {/* Financial Ledger Section */}
+        <div className="prof-card" style={{ padding: '2rem' }}>
+          <h2 style={{ fontSize: '1.2rem', fontWeight: 700, margin: 0, marginBottom: '2rem', color: 'var(--text-main)' }}>
+            Financial Ledger
+          </h2>
+          
+          <div style={{ overflowX: 'auto' }}>
+            <table className="prof-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr>
+                  <th style={{ textAlign: 'left', padding: '1rem', fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--border-color)' }}>Category</th>
+                  <th style={{ textAlign: 'left', padding: '1rem', fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--border-color)' }}>Description</th>
+                  <th style={{ textAlign: 'center', padding: '1rem', fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--border-color)' }}>Amount</th>
+                  <th style={{ textAlign: 'center', padding: '1rem', fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--border-color)' }}>Type</th>
+                  <th style={{ textAlign: 'right', padding: '1rem', fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--border-color)' }}>Date</th>
                 </tr>
-              ))}
-              {expenses.length === 0 && <tr><td colSpan="4" style={{ textAlign: 'center', color: 'var(--text-muted)' }}>No expenses recorded yet.</td></tr>}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {transactions.map(item => {
+                  const isPositive = item.amount > 0;
+                  return (
+                    <tr key={item.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                      {/* Category */}
+                      <td style={{ padding: '1.25rem 1rem', fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                        {item.category}
+                      </td>
+                      {/* Description */}
+                      <td style={{ padding: '1.25rem 1rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                        {item.desc}
+                      </td>
+                      {/* Amount */}
+                      <td style={{ 
+                        padding: '1.25rem 1rem', 
+                        fontSize: '0.9rem', 
+                        fontWeight: 700, 
+                        textAlign: 'center',
+                        color: isPositive ? '#10b981' : '#ef4444' 
+                      }}>
+                        {isPositive ? '+ ' : '- '}
+                        {formatCurrency(Math.abs(item.amount))}
+                      </td>
+                      {/* Type Badge */}
+                      <td style={{ padding: '1.25rem 1rem', textAlign: 'center' }}>
+                        <span style={{
+                          display: 'inline-block',
+                          padding: '0.25rem 0.75rem',
+                          borderRadius: '20px',
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
+                          color: isPositive ? '#10b981' : '#ef4444',
+                          background: isPositive ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                          border: `1px solid ${isPositive ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`
+                        }}>
+                          {item.type}
+                        </span>
+                      </td>
+                      {/* Date */}
+                      <td style={{ padding: '1.25rem 1rem', fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'right', fontWeight: 600 }}>
+                        {item.date}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
+
       </main>
     </>
   );
