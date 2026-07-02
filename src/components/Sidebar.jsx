@@ -37,14 +37,14 @@ const SidebarItem = ({ icon: Icon, label, active, onClick }) => (
 );
 
 const Sidebar = () => {
-  const { logout, userRole } = useContext(AppContext);
+  const { logout, userRole, sidebarCollapsed } = useContext(AppContext);
   const navigate = useNavigate();
   const location = useLocation();
 
   const path = location.pathname;
 
   return (
-    <div className="sidebar">
+    <div className={`sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
       <div style={{ padding: '2rem 1.5rem', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
         <div style={{ width: '32px', height: '32px', background: 'var(--primary-text)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <span style={{ color: 'white', fontWeight: 'bold', fontSize: '1.2rem' }}>A</span>

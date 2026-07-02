@@ -1,18 +1,33 @@
 import React, { useContext, useState, useEffect, useRef } from 'react';
-import { Bell, Search, UserCircle, Sun, Moon } from 'lucide-react';
+import { Bell, Search, Sun, Moon, Menu } from 'lucide-react';
 import { AppContext } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
 
 const Header = () => {
-  const { theme, setTheme, students, classes, logout, userRole } = useContext(AppContext);
+  const { theme, setTheme, students, classes, logout, userRole, sidebarCollapsed, setSidebarCollapsed } = useContext(AppContext);
   const [searchVal, setSearchVal] = useState('');
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [timeString, setTimeString] = useState('');
   
   const navigate = useNavigate();
   const searchRef = useRef(null);
   const notifRef = useRef(null);
   const profileRef = useRef(null);
+
+  useEffect(() => {
+    const updateTime = () => {
+      setTimeString(new Date().toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+      }));
+    };
+    updateTime();
+    const timer = setInterval(updateTime, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -46,24 +61,69 @@ const Header = () => {
   const filteredStudentsRaw = searchVal.trim() === '' ? [] : students.filter(s => s && (s.name || '').toLowerCase().includes(searchVal.toLowerCase()));
   const filteredClassesRaw = searchVal.trim() === '' ? [] : classes.filter(c => c && (c.name || '').toLowerCase().includes(searchVal.toLowerCase()));
 
-  // Deduplicate by ID to prevent duplicate items from showing in the search list
   const filteredStudents = Array.from(new Map(filteredStudentsRaw.filter(s => s && s.id).map(s => [s.id, s])).values());
   const filteredClasses = Array.from(new Map(filteredClassesRaw.filter(c => c && c.id).map(c => [c.id, c])).values());
 
+  const getInitials = () => {
+    if (userRole === 'admin') return 'AD';
+    if (userRole === 'teacher') return 'TE';
+    return 'ST';
+  };
+
   return (
-    <header className="flex-between" style={{ marginBottom: '2rem' }}>
-      <div>
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0, color: 'var(--text-main)' }}>Overview</h1>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.2rem' }}>{currentDate}</p>
+    <header className="flex-between" style={{ marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+      
+      {/* Left side: Hamburger Toggle + Overview Title */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <div 
+          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+          style={{
+            cursor: 'pointer',
+            width: '40px',
+            height: '40px',
+            borderRadius: '50%',
+            background: 'var(--secondary)',
+            border: '1px solid var(--border-color)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'all 0.2s ease',
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.background = 'var(--secondary-hover)'}
+          onMouseLeave={(e) => e.currentTarget.style.background = 'var(--secondary)'}
+        >
+          <Menu size={20} color="var(--text-main)" />
+        </div>
+        <div>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0, color: 'var(--text-main)' }}>Overview</h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: '0.2rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{currentDate}</p>
+        </div>
       </div>
 
-      <div className="flex-center gap-3">
+      {/* Right side: Time + Search + Theme + Notifications + User */}
+      <div className="flex-center gap-3" style={{ flexWrap: 'wrap' }}>
+        
+        {/* Digital Clock */}
+        <div className="flex-center" style={{
+          padding: '0.5rem 1rem',
+          borderRadius: '20px',
+          fontSize: '0.8rem',
+          color: 'var(--primary-text)',
+          fontWeight: 600,
+          background: 'var(--secondary)',
+          border: '1px solid var(--border-color)',
+        }}>
+          {timeString || '00:00:00 AM'}
+        </div>
+
+        {/* Search */}
         <div ref={searchRef} style={{ position: 'relative' }}>
+          <Search size={16} color="var(--text-muted)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
           <input 
             type="text" 
             placeholder="Search students, classes..." 
             className="prof-input"
-            style={{ paddingLeft: '1rem', borderRadius: '20px', width: '250px' }}
+            style={{ paddingLeft: '2.2rem', borderRadius: '20px', width: '220px' }}
             value={searchVal}
             onChange={(e) => setSearchVal(e.target.value)}
           />
@@ -138,18 +198,50 @@ const Header = () => {
           )}
         </div>
 
-        {/* Theme Switcher Button */}
-        <div onClick={toggleTheme} title="Toggle Theme" style={{ cursor: 'pointer', padding: '0.5rem', borderRadius: '50%', background: 'var(--secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.2s' }}>
+        {/* Theme Switcher */}
+        <div 
+          onClick={toggleTheme} 
+          title="Toggle Theme" 
+          style={{ 
+            cursor: 'pointer', 
+            width: '40px',
+            height: '40px',
+            borderRadius: '50%',
+            background: 'var(--secondary)', 
+            border: '1px solid var(--border-color)',
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            transition: 'background 0.2s' 
+          }}
+        >
           {theme === 'light' ? <Moon size={18} color="var(--text-main)" /> : <Sun size={18} color="var(--text-main)" />}
         </div>
 
-        {/* Notifications Icon and Dropdown */}
-        <div ref={notifRef} style={{ position: 'relative', cursor: 'pointer' }} className="flex-center" onClick={() => setShowNotifications(!showNotifications)} title="Notifications">
-          <Bell size={20} color="var(--text-main)" />
+        {/* Notifications */}
+        <div 
+          ref={notifRef} 
+          className="flex-center" 
+          onClick={() => setShowNotifications(!showNotifications)} 
+          title="Notifications"
+          style={{
+            cursor: 'pointer',
+            width: '40px',
+            height: '40px',
+            borderRadius: '50%',
+            background: 'var(--secondary)',
+            border: '1px solid var(--border-color)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            position: 'relative'
+          }}
+        >
+          <Bell size={18} color="var(--text-main)" />
           <span style={{
             position: 'absolute',
-            top: '-2px',
-            right: '-2px',
+            top: '8px',
+            right: '8px',
             background: 'var(--danger)',
             width: '8px',
             height: '8px',
@@ -160,7 +252,7 @@ const Header = () => {
           {showNotifications && (
             <div className="prof-card" style={{
               position: 'absolute',
-              top: '130%',
+              top: '120%',
               right: 0,
               width: '280px',
               zIndex: 1000,
@@ -184,13 +276,29 @@ const Header = () => {
           )}
         </div>
 
-        {/* Profile Details and Dropdown */}
-        <div ref={profileRef} className="flex-center gap-1" style={{ position: 'relative', cursor: 'pointer', marginLeft: '1rem', borderLeft: '1px solid var(--border-color)', paddingLeft: '1.5rem' }} onClick={() => setShowProfileMenu(!showProfileMenu)} title="Account Settings">
-          <UserCircle size={32} color="var(--primary-text)" style={{ opacity: 0.8 }} />
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-main)', textTransform: 'capitalize' }}>{userRole}</span>
-            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Online</span>
+        {/* Profile */}
+        <div 
+          ref={profileRef} 
+          className="flex-center gap-2" 
+          style={{ position: 'relative', cursor: 'pointer', paddingLeft: '0.5rem' }} 
+          onClick={() => setShowProfileMenu(!showProfileMenu)} 
+          title="Account Settings"
+        >
+          <div style={{
+            width: '36px',
+            height: '36px',
+            borderRadius: '50%',
+            background: 'var(--primary-text)',
+            color: 'white',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontWeight: 700,
+            fontSize: '0.85rem'
+          }}>
+            {getInitials()}
           </div>
+          <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-main)', textTransform: 'capitalize' }}>{userRole}</span>
 
           {showProfileMenu && (
             <div className="prof-card" style={{

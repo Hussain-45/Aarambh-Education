@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { Users, BookOpen, CheckSquare, ArrowRight, Plus, Calendar as CalendarIcon, IndianRupee } from 'lucide-react';
+import { Users, BookOpen, CheckSquare, ArrowRight, Plus, Calendar as CalendarIcon, IndianRupee, Check } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 import StatCard from '../components/StatCard';
@@ -56,7 +56,7 @@ const AdminDashboard = () => {
         {/* Middle Section: Recent Activity & Actions */}
         <div style={{ display: 'flex', gap: '2rem', flexDirection: 'row', flexWrap: 'wrap', marginBottom: '2rem' }}>
           
-          <div className="prof-card" style={{ flex: '1 1 400px' }}>
+          <div className="prof-card" style={{ flex: '2 1 450px' }}>
              <div className="flex-between" style={{ marginBottom: '1.5rem' }}>
                <h2 style={{ fontSize: '1.1rem', fontWeight: 600, margin: 0 }}>Pending Requests</h2>
                <button onClick={() => navigate('/requests')} className="prof-btn prof-btn-secondary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}>View All</button>
@@ -72,46 +72,66 @@ const AdminDashboard = () => {
                  </div>
                ))}
                {pendingRequests.length === 0 && (
-                 <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>No pending requests.</div>
+                 <div style={{ padding: '3rem 2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', gap: '0.75rem' }}>
+                   <div style={{ 
+                     width: '40px', height: '40px', borderRadius: '50%', 
+                     border: '2px solid var(--success)', display: 'flex', 
+                     alignItems: 'center', justifyContent: 'center',
+                     boxShadow: '0 0 10px rgba(16, 185, 129, 0.2)'
+                   }}>
+                     <Check size={20} color="var(--success)" />
+                   </div>
+                   <div style={{ fontSize: '0.9rem', fontWeight: 500, color: 'var(--text-muted)' }}>All registration requests cleared</div>
+                 </div>
                )}
              </div>
           </div>
 
-          <div className="prof-card" style={{ flex: '0 0 350px', display: 'flex', flexDirection: 'column' }}>
+          <div className="prof-card" style={{ flex: '1 1 350px', display: 'flex', flexDirection: 'column' }}>
             <h2 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1.5rem', marginTop: 0 }}>Quick Actions</h2>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1 }}>
-              <button onClick={() => navigate('/attendance')} className="prof-btn prof-btn-outline" style={{ justifyContent: 'space-between' }}>
+              <button onClick={() => navigate('/attendance')} className="dashboard-action-btn">
                 <span>Mark Attendance</span>
                 <ArrowRight size={16} />
               </button>
-              <button onClick={() => navigate('/students')} className="prof-btn prof-btn-outline" style={{ justifyContent: 'space-between' }}>
+              <button onClick={() => navigate('/students')} className="dashboard-action-btn">
                 <span>Add New Student</span>
                 <Plus size={16} />
               </button>
-              <button onClick={() => navigate('/requests')} className="prof-btn prof-btn-outline" style={{ justifyContent: 'space-between', position: 'relative' }}>
+              <button onClick={() => navigate('/requests')} className="dashboard-action-btn">
                 <span>Registration Requests</span>
-                {pendingRequests.length > 0 && (
-                  <span style={{ position: 'absolute', right: '40px', background: 'var(--danger)', color: 'white', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <span style={{ 
+                    background: pendingRequests.length > 0 ? 'var(--danger)' : 'var(--secondary)', 
+                    color: pendingRequests.length > 0 ? 'white' : 'var(--text-muted)', 
+                    borderRadius: '50%', width: '22px', height: '22px', 
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                    fontSize: '0.75rem', fontWeight: 600,
+                    border: '1px solid var(--border-color)'
+                  }}>
                     {pendingRequests.length}
                   </span>
-                )}
-                <ArrowRight size={16} />
+                  <ArrowRight size={16} />
+                </div>
               </button>
               
               <div style={{ marginTop: 'auto', paddingTop: '1.5rem', borderTop: `1px solid var(--border-color)` }}>
-                <div className="flex-between" style={{ marginBottom: '0.5rem', fontSize: '0.85rem' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>System Status</span>
-                  <span style={{ color: 'var(--success)', fontWeight: 500 }}>All Systems Operational</span>
+                <div className="flex-between" style={{ marginBottom: '0.75rem', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>
+                  <span>System Status</span>
+                  <span style={{ color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--success)', display: 'inline-block', filter: 'drop-shadow(0 0 3px var(--success))' }}></span>
+                    All Systems Operational
+                  </span>
                 </div>
-                <div style={{ width: '100%', height: '6px', background: 'var(--secondary)', borderRadius: '3px', overflow: 'hidden' }}>
+                <div style={{ width: '100%', height: '4px', background: 'var(--secondary)', borderRadius: '2px', overflow: 'hidden' }}>
                   <div style={{ width: '100%', height: '100%', background: 'var(--success)' }}></div>
                 </div>
               </div>
             </div>
           </div>
 
-          <div style={{ flex: '0 0 320px' }}>
+          <div style={{ flex: '1 1 320px' }}>
             <WhatsAppStatus />
           </div>
         </div>

@@ -12,6 +12,7 @@ export const AppProvider = ({ children }) => {
   });
   const [isAuthenticated, setIsAuthenticated] = useState(!!authToken);
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   // Serverless LocalStorage DB State
   const [classes, setClasses] = useState([]);
@@ -1003,7 +1004,7 @@ export const AppProvider = ({ children }) => {
     <AppContext.Provider value={{
       isAuthenticated, userRole, loggedInUser,
       loginAdmin, registerAdmin, loginStudent, loginTeacher, logout, requestRegistration, approveRequest, rejectRequest,
-      theme, setTheme, 
+      theme, setTheme, sidebarCollapsed, setSidebarCollapsed,
       students, teachers, fees, messages, toasts, classes, expenses, attendance,
       assignments, submissions, calendarEvents, library, history, announcements, registrationRequests,
       sendMessage, recordFeePayment, sendFeeReminders, addToast, addStudent, removeStudent, removeBatch,

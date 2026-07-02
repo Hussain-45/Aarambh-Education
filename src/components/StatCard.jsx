@@ -17,13 +17,22 @@ const StatCard = ({ title, value, icon: Icon, trend }) => {
           <Icon size={24} />
         </div>
       </div>
-      <div style={{ marginTop: '1rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-        <span style={{ 
-          color: trend > 0 ? 'var(--success)' : 'var(--danger)', 
-          fontWeight: 600
-        }}>
-          {trend > 0 ? '+' : ''}{trend}%
-        </span>
+      <div style={{ marginTop: '1rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+        {trend > 0 && (
+          <span style={{ color: 'var(--success)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+            ▲ +{trend}%
+          </span>
+        )}
+        {trend === 0 && (
+          <span style={{ color: 'var(--text-muted)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+            ■ 0%
+          </span>
+        )}
+        {trend < 0 && (
+          <span style={{ color: 'var(--danger)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+            ▼ {trend}%
+          </span>
+        )}
         <span style={{ color: 'var(--text-muted)' }}>vs last month</span>
       </div>
     </div>
