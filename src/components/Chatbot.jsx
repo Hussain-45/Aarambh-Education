@@ -16,7 +16,9 @@ const Chatbot = () => {
   };
 
   useEffect(() => {
-    scrollToBottom();
+    if (isOpen) {
+      scrollToBottom();
+    }
   }, [messages, isOpen]);
 
   const handleSend = async (e) => {
