@@ -99,14 +99,14 @@ export const AppProvider = ({ children }) => {
         { id: 1, name: 'System Admin', username: 'admin', password: 'pass', role: 'admin', email: 'admin@aarambh.edu' },
         { id: 4, name: 'Jaspreet Singh', username: 'jaspreet', password: '1526', role: 'admin', email: 'jaspreet@aarambh.edu' },
         { id: 2, name: 'S. Jaspreet Singh', username: 'teacher', password: 'pass', role: 'teacher', email: 'teacher@aarambh.edu' },
-        { id: 3, name: 'Jaspreet Kaur', username: 'student', password: 'pass', role: 'student', fatherName: 'Jaspreet Singh', class: '10th Math', admission_number: 'AES1', parentPhone: '9876543210' }
+        { id: 3, name: 'Jaspreet Kaur', username: 'jaspreetmuskan93@gmail.com', password: 'Jaspreet@2005', role: 'student', fatherName: 'Jaspreet Singh', class: '10th Math', admission_number: 'AES1', parentPhone: '9876543210' }
       ];
       const defaultClasses = [
         { id: 1, name: '10th Math', grade: 'Class A', time: '10:00 AM' },
         { id: 2, name: '10th Science', grade: 'Class B', time: '11:30 AM' }
       ];
       const defaultStudents = [
-        { id: 3, name: 'Jaspreet Kaur', class: '10th Math', parentPhone: '9876543210', fatherName: 'Jaspreet Singh', username: 'student', admission_number: 'AES1' }
+        { id: 3, name: 'Jaspreet Kaur', class: '10th Math', parentPhone: '9876543210', fatherName: 'Jaspreet Singh', username: 'jaspreetmuskan93@gmail.com', admission_number: 'AES1' }
       ];
       const defaultTeachers = [
         { id: 2, name: 'S. Jaspreet Singh', email: 'teacher@aarambh.edu', username: 'teacher' }
@@ -180,6 +180,40 @@ export const AppProvider = ({ children }) => {
         }
       });
       localStorage.setItem('aarambh_users', JSON.stringify(currentUsers));
+    }
+
+    // Self-healing migration to update default student portal credentials
+    const currentUsersList = JSON.parse(localStorage.getItem('aarambh_users') || '[]');
+    let usersUpdated = false;
+    const migratedUsers = currentUsersList.map(u => {
+      if (u.role === 'student' && u.username === 'student') {
+        usersUpdated = true;
+        return {
+          ...u,
+          username: 'jaspreetmuskan93@gmail.com',
+          password: 'Jaspreet@2005'
+        };
+      }
+      return u;
+    });
+    if (usersUpdated) {
+      localStorage.setItem('aarambh_users', JSON.stringify(migratedUsers));
+    }
+
+    const currentStudentsList = JSON.parse(localStorage.getItem('aarambh_students') || '[]');
+    let studentsUpdated = false;
+    const migratedStudents = currentStudentsList.map(s => {
+      if (s.username === 'student') {
+        studentsUpdated = true;
+        return {
+          ...s,
+          username: 'jaspreetmuskan93@gmail.com'
+        };
+      }
+      return s;
+    });
+    if (studentsUpdated) {
+      localStorage.setItem('aarambh_students', JSON.stringify(migratedStudents));
     }
 
     // Load state from localStorage
@@ -281,9 +315,9 @@ export const AppProvider = ({ children }) => {
     const cleanUsername = (username || '').trim().toLowerCase();
     const cleanPassword = (actualPassword || '').trim();
 
-    // Fail-safe credential bypass (allows ANY password for student)
-    if (cleanUsername === 'student') {
-      const defaultStudent = { id: 3, name: 'Jaspreet Kaur', username: 'student', role: 'student', fatherName: 'Jaspreet Singh', class: '10th Math', admission_number: 'AES1', parentPhone: '9876543210' };
+    // Fail-safe credential bypass (allows login with new default credentials)
+    if (cleanUsername === 'jaspreetmuskan93@gmail.com' && cleanPassword === 'Jaspreet@2005') {
+      const defaultStudent = { id: 3, name: 'Jaspreet Kaur', username: 'jaspreetmuskan93@gmail.com', role: 'student', fatherName: 'Jaspreet Singh', class: '10th Math', admission_number: 'AES1', parentPhone: '9876543210' };
       setAuthToken('student-mock-token');
       setUserRole('student');
       setLoggedInUser(defaultStudent);
