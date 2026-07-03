@@ -97,6 +97,19 @@ const Teachers = () => {
     return name ? name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'TE';
   };
 
+  const getAvatarGradient = (name) => {
+    const charCode = name ? name.charCodeAt(0) : 65;
+    const gradients = [
+      'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)', // Blue
+      'linear-gradient(135deg, #10b981 0%, #047857 100%)', // Emerald
+      'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)', // Violet
+      'linear-gradient(135deg, #ec4899 0%, #be185d 100%)', // Pink
+      'linear-gradient(135deg, #f59e0b 0%, #b45309 100%)', // Amber
+      'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)', // Red
+    ];
+    return gradients[charCode % gradients.length];
+  };
+
   const filteredTeachers = teachers.filter(t => 
     (t.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
     (t.username || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -141,13 +154,34 @@ const Teachers = () => {
           {/* Card Grid Layout */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.5rem' }}>
             {filteredTeachers.map((teacher) => (
-              <div key={teacher.id} className="prof-card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', position: 'relative' }}>
+              <div 
+                key={teacher.id} 
+                className="prof-card" 
+                style={{ 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  gap: '1rem', 
+                  position: 'relative',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-5px)';
+                  e.currentTarget.style.boxShadow = 'var(--shadow-glass-hover), 0 8px 24px rgba(0,0,0,0.12)';
+                  e.currentTarget.style.borderColor = 'var(--primary-text)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = 'var(--shadow-glass)';
+                  e.currentTarget.style.borderColor = 'var(--border-color)';
+                }}
+              >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                   <div style={{ 
                     width: '48px', height: '48px', borderRadius: '50%', 
-                    background: 'var(--primary)', color: 'var(--primary-text)', 
+                    background: getAvatarGradient(teacher.name), color: '#ffffff', 
                     display: 'flex', alignItems: 'center', justifyContent: 'center', 
-                    fontWeight: 700, fontSize: '1.1rem', flexShrink: 0
+                    fontWeight: 700, fontSize: '1.1rem', flexShrink: 0,
+                    boxShadow: '0 4px 10px rgba(0,0,0,0.15)'
                   }}>
                     {getInitials(teacher.name)}
                   </div>

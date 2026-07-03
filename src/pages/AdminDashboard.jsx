@@ -49,7 +49,7 @@ const AdminDashboard = () => {
         {/* Top Stat Cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '2rem', marginBottom: '2rem' }}>
           <StatCard title="Total Students" value={analytics.totalStudents.toString()} icon={Users} trend={2} />
-          <StatCard title="Active Classes" value={analytics.activeClasses.toString()} icon={BookOpen} trend={0} />
+          <StatCard title="Active Batches" value={analytics.activeClasses.toString()} icon={BookOpen} trend={0} />
           <StatCard title="Total Revenue" value={`₹${analytics.totalRevenue}`} icon={IndianRupee} trend={5} />
         </div>
 
