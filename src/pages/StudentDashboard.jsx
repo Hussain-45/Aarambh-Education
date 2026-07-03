@@ -19,8 +19,19 @@ const StudentDashboard = () => {
   const myFeesList = fees.filter(f => f.studentId === loggedInUser.id);
   const sortedFees = [...myFeesList].sort((a, b) => monthsOrder.indexOf(a.month) - monthsOrder.indexOf(b.month));
 
-  const totalAssigned = myFeesList.reduce((sum, f) => sum + f.total, 0);
-  const totalPaid = myFeesList.reduce((sum, f) => sum + f.paid, 0);
+  // Determine allowed months for the last 6 months (ending with the current month)
+  const currentMonthIdx = new Date().getMonth();
+  const allowedMonths = [];
+  for (let i = 0; i < 6; i++) {
+    const idx = (currentMonthIdx - i + 12) % 12;
+    allowedMonths.push(monthsOrder[idx]);
+  }
+
+  // Filter list to only the last 6 months
+  const last6MonthsFees = sortedFees.filter(f => allowedMonths.includes(f.month));
+
+  const totalAssigned = last6MonthsFees.reduce((sum, f) => sum + f.total, 0);
+  const totalPaid = last6MonthsFees.reduce((sum, f) => sum + f.paid, 0);
   const totalPending = totalAssigned - totalPaid;
 
   const mySubmissions = submissions.filter(s => s.studentId === loggedInUser.id);
@@ -170,7 +181,7 @@ const StudentDashboard = () => {
                   <IndianRupee size={20} style={{ color: 'var(--primary-text)' }} /> Monthly Fee Status & Receipts
                 </h2>
                 <div style={{ display: 'flex', gap: '1rem', fontSize: '0.8rem' }}>
-                  <span className="badge badge-secondary">Jan - Dec Cycle</span>
+                  <span className="badge badge-secondary">Last 6 Months</span>
                 </div>
               </div>
 
@@ -188,7 +199,7 @@ const StudentDashboard = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {sortedFees.map(fee => (
+                    {last6MonthsFees.map(fee => (
                       <tr key={fee.id}>
                         <td style={{ fontWeight: 600, color: 'var(--text-main)' }}>{fee.month}</td>
                         <td style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{fee.dueDate}</td>
@@ -213,7 +224,7 @@ const StudentDashboard = () => {
                         </td>
                       </tr>
                     ))}
-                    {sortedFees.length === 0 && (
+                    {last6MonthsFees.length === 0 && (
                       <tr>
                         <td colSpan="7" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' }}>
                           No monthly fees mapped. Please check with administrator.
