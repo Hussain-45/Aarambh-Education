@@ -53,13 +53,16 @@ const FeeReceiptModal = ({ isOpen, onClose, fee, student, className }) => {
   return (
     <div style={{
       position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-      background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center',
-      alignItems: 'center', zIndex: 1100, padding: '20px'
+      background: 'rgba(0,0,0,0.55)', display: 'flex', justifyContent: 'center',
+      alignItems: 'center', zIndex: 1100, padding: '20px',
+      backdropFilter: 'blur(4px)'
     }}>
       <div style={{
-        background: 'var(--card-bg, #ffffff)', borderRadius: '16px',
-        width: '100%', maxWidth: '600px', padding: '24px', boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
-        display: 'flex', flexDirection: 'column', gap: '20px', position: 'relative'
+        background: 'var(--modal-bg, #ffffff)', borderRadius: '16px',
+        width: '100%', maxWidth: '600px', padding: '24px', boxShadow: 'var(--shadow-modal, 0 8px 30px rgba(0,0,0,0.12))',
+        border: '1px solid var(--modal-border, rgba(0,0,0,0.08))',
+        display: 'flex', flexDirection: 'column', gap: '20px', position: 'relative',
+        transition: 'background 0.3s ease, border-color 0.3s ease'
       }}>
         {/* Close Button */}
         <button onClick={onClose} style={{
@@ -71,8 +74,8 @@ const FeeReceiptModal = ({ isOpen, onClose, fee, student, className }) => {
 
         {/* Receipt Container */}
         <div ref={receiptRef} style={{ padding: '10px' }}>
-          <div style={{ textAlign: 'center', borderBottom: '2px solid var(--primary, #4A90E2)', paddingBottom: '15px', marginBottom: '20px' }}>
-            <h2 style={{ color: 'var(--primary, #4A90E2)', margin: 0, fontSize: '24px', fontWeight: 'bold' }}>Aarambh Tuition Center</h2>
+          <div style={{ textAlign: 'center', borderBottom: '2px solid var(--primary-text, #4A90E2)', paddingBottom: '15px', marginBottom: '20px' }}>
+            <h2 style={{ color: 'var(--primary-text, #4A90E2)', margin: 0, fontSize: '24px', fontWeight: 'bold' }}>Aarambh Tuition Center</h2>
             <p style={{ color: 'var(--text-muted, #666)', margin: '5px 0 0 0', fontSize: '13px' }}>123, Aarambh Building, Model Town, India</p>
             <p style={{ color: 'var(--text-muted, #666)', margin: '2px 0 0 0', fontSize: '12px' }}>Email: aarambhinstitute46@gmail.com</p>
           </div>
@@ -83,11 +86,11 @@ const FeeReceiptModal = ({ isOpen, onClose, fee, student, className }) => {
               <strong>Date:</strong> {transactionDate}
             </div>
             <div style={{ textAlign: 'right' }}>
-              <strong>Payment Status:</strong> <span style={{ color: fee.status === 'Paid' ? '#2e7d32' : '#c62828', fontWeight: 'bold' }}>{fee.status.toUpperCase()}</span>
+              <strong>Payment Status:</strong> <span style={{ color: fee.status === 'Paid' ? 'var(--text-success, #2e7d32)' : 'var(--text-danger, #c62828)', fontWeight: 'bold' }}>{fee.status.toUpperCase()}</span>
             </div>
           </div>
 
-          <div style={{ background: 'var(--bg-muted, #f8f9fa)', padding: '15px', borderRadius: '8px', marginBottom: '20px', color: 'var(--text-main)' }}>
+          <div style={{ background: 'var(--bg-muted, #f8f9fa)', padding: '15px', borderRadius: '8px', marginBottom: '20px', color: 'var(--text-main)', border: '1px solid var(--modal-border, rgba(0,0,0,0.08))' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '13px' }}>
               <div><strong>Student Name:</strong> {student?.name || fee.name || 'N/A'}</div>
               <div><strong>Batch Name:</strong> {className || student?.class || 'N/A'}</div>
@@ -99,31 +102,31 @@ const FeeReceiptModal = ({ isOpen, onClose, fee, student, className }) => {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', color: 'var(--text-main)' }}>
             <thead>
               <tr style={{ background: 'var(--bg-muted, #f8f9fa)' }}>
-                <th style={{ padding: '10px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Fee Description</th>
-                <th style={{ padding: '10px', textAlign: 'right', borderBottom: '1px solid #ddd' }}>Amount</th>
+                <th style={{ padding: '10px', textAlign: 'left', borderBottom: '1px solid var(--table-border, #ddd)' }}>Fee Description</th>
+                <th style={{ padding: '10px', textAlign: 'right', borderBottom: '1px solid var(--table-border, #ddd)' }}>Amount</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td style={{ padding: '10px', borderBottom: '1px solid #eee' }}>Tuition Fee for Month: {fee.month}</td>
-                <td style={{ padding: '10px', textAlign: 'right', borderBottom: '1px solid #eee' }}>Rs. {fee.total}</td>
+                <td style={{ padding: '10px', borderBottom: '1px solid var(--table-border, #eee)' }}>Tuition Fee for Month: {fee.month}</td>
+                <td style={{ padding: '10px', textAlign: 'right', borderBottom: '1px solid var(--table-border, #eee)' }}>Rs. {fee.total}</td>
               </tr>
               <tr>
-                <td style={{ padding: '10px', borderBottom: '1px solid #eee', fontWeight: 'bold' }}>Amount Paid</td>
-                <td style={{ padding: '10px', textAlign: 'right', borderBottom: '1px solid #eee', fontWeight: 'bold', color: '#2e7d32' }}>Rs. {fee.paid}</td>
+                <td style={{ padding: '10px', borderBottom: '1px solid var(--table-border, #eee)', fontWeight: 'bold' }}>Amount Paid</td>
+                <td style={{ padding: '10px', textAlign: 'right', borderBottom: '1px solid var(--table-border, #eee)', fontWeight: 'bold', color: 'var(--text-success, #2e7d32)' }}>Rs. {fee.paid}</td>
               </tr>
-              <tr style={{ fontWeight: 'bold', fontSize: '14px', borderTop: '2px solid #ddd' }}>
+              <tr style={{ fontWeight: 'bold', fontSize: '14px', borderTop: '2px solid var(--table-border, #ddd)' }}>
                 <td style={{ padding: '10px' }}>Balance Outstanding</td>
-                <td style={{ padding: '10px', textAlign: 'right', color: dueAmount > 0 ? '#c62828' : '#2e7d32' }}>Rs. {dueAmount}</td>
+                <td style={{ padding: '10px', textAlign: 'right', color: dueAmount > 0 ? 'var(--text-danger, #c62828)' : 'var(--text-success, #2e7d32)' }}>Rs. {dueAmount}</td>
               </tr>
             </tbody>
           </table>
 
           <div style={{ textAlign: 'center', marginTop: '20px' }}>
             {fee.status === 'Paid' ? (
-              <span className="stamp" style={{ border: '2px dashed #2e7d32', color: '#2e7d32', textTransform: 'uppercase', fontWeight: 'bold', fontSize: '16px', padding: '5px 15px', display: 'inline-block', transform: 'rotate(-5deg)', marginTop: '15px', borderRadius: '4px' }}>PAID RECEIPT</span>
+              <span className="stamp" style={{ border: '2px dashed var(--text-success, #2e7d32)', color: 'var(--text-success, #2e7d32)', textTransform: 'uppercase', fontWeight: 'bold', fontSize: '16px', padding: '5px 15px', display: 'inline-block', transform: 'rotate(-5deg)', marginTop: '15px', borderRadius: '4px' }}>PAID RECEIPT</span>
             ) : (
-              <span className="stamp" style={{ border: '2px dashed #c62828', color: '#c62828', textTransform: 'uppercase', fontWeight: 'bold', fontSize: '16px', padding: '5px 15px', display: 'inline-block', transform: 'rotate(-5deg)', marginTop: '15px', borderRadius: '4px' }}>PENDING DUE</span>
+              <span className="stamp" style={{ border: '2px dashed var(--text-danger, #c62828)', color: 'var(--text-danger, #c62828)', textTransform: 'uppercase', fontWeight: 'bold', fontSize: '16px', padding: '5px 15px', display: 'inline-block', transform: 'rotate(-5deg)', marginTop: '15px', borderRadius: '4px' }}>PENDING DUE</span>
             )}
           </div>
 
@@ -133,7 +136,7 @@ const FeeReceiptModal = ({ isOpen, onClose, fee, student, className }) => {
         </div>
 
         {/* Actions panel */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', borderTop: '1px solid #eee', paddingTop: '15px' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', borderTop: '1px solid var(--table-border, #eee)', paddingTop: '15px' }}>
           <button onClick={handleShare} className="prof-btn prof-btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '13px' }}>
             <Share2 size={16} /> Share via WhatsApp
           </button>

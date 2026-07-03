@@ -1,10 +1,28 @@
-import React, { useContext } from 'react';
+import React, { useState, useContext } from 'react';
 import { AppContext } from '../context/AppContext';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
+import { Plus } from 'lucide-react';
 
 const ProfitLoss = () => {
   const { userRole } = useContext(AppContext);
+
+  // local state to store ledger items
+  const [ledgerItems, setLedgerItems] = useState([
+    { id: 1, category: 'Student Fees', desc: 'Course fee collected dynamically', amount: 70000, type: 'Income', date: '2026-07-02' },
+    { id: 2, category: 'Infrastructure Rent', desc: 'Monthly facility rent allocation', amount: -8000, type: 'Expense', date: '2026-07-01' },
+    { id: 3, category: 'Faculty Payroll', desc: 'Monthly core teacher payout allocation', amount: -5000, type: 'Expense', date: '2026-07-01' },
+    { id: 4, category: 'Software Server Cloud', desc: 'Database cloud server host billing', amount: -2000, type: 'Expense', date: '2026-06-30' },
+  ]);
+
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newForm, setNewForm] = useState({
+    category: '',
+    desc: '',
+    amount: '',
+    type: 'Expense',
+    date: new Date().toISOString().split('T')[0]
+  });
 
   if (userRole !== 'admin') {
     return (
@@ -21,31 +39,49 @@ const ProfitLoss = () => {
     );
   }
 
-  // Transaction Ledger Data matching the screenshot
-  const transactions = [
-    { id: 1, category: 'Student Fees', desc: 'Course fee collected dynamically', amount: 70000, type: 'Income', date: '2026-07-02' },
-    { id: 2, category: 'Infrastructure Rent', desc: 'Monthly facility rent allocation', amount: -8000, type: 'Expense', date: '2026-07-01' },
-    { id: 3, category: 'Faculty Payroll', desc: 'Monthly core teacher payout allocation', amount: -5000, type: 'Expense', date: '2026-07-01' },
-    { id: 4, category: 'Software Server Cloud', desc: 'Database cloud server host billing', amount: -2000, type: 'Expense', date: '2026-06-30' },
-  ];
-
   // Dynamic Calculations
-  const grossRevenue = transactions
+  const grossRevenue = ledgerItems
     .filter(t => t.amount > 0)
     .reduce((sum, t) => sum + t.amount, 0);
 
   const operatingCosts = Math.abs(
-    transactions
+    ledgerItems
       .filter(t => t.amount < 0)
       .reduce((sum, t) => sum + t.amount, 0)
   );
 
   const netIncome = grossRevenue - operatingCosts;
-  const profitMargin = ((netIncome / grossRevenue) * 100).toFixed(1);
+  const profitMargin = grossRevenue > 0 ? ((netIncome / grossRevenue) * 100).toFixed(1) : '0.0';
 
   // Format currency helper
   const formatCurrency = (val) => {
     return '₹' + val.toLocaleString('en-IN');
+  };
+
+  const handleAddSubmit = (e) => {
+    e.preventDefault();
+    const amountVal = parseFloat(newForm.amount);
+    if (isNaN(amountVal) || amountVal <= 0) return;
+
+    const newItem = {
+      id: Date.now(),
+      category: newForm.category,
+      desc: newForm.desc,
+      amount: newForm.type === 'Income' ? amountVal : -amountVal,
+      type: newForm.type,
+      date: newForm.date
+    };
+
+    setLedgerItems(prev => [newItem, ...prev]);
+    setShowAddForm(false);
+    // Reset form
+    setNewForm({
+      category: '',
+      desc: '',
+      amount: '',
+      type: 'Expense',
+      date: new Date().toISOString().split('T')[0]
+    });
   };
 
   return (
@@ -54,13 +90,100 @@ const ProfitLoss = () => {
       <main className="main-content">
         <Header />
         
-        {/* Page Title */}
-        <div style={{ marginBottom: '2rem' }}>
-          <h2 style={{ fontSize: '1.6rem', fontWeight: 700, margin: 0, color: 'var(--text-main)' }}>Profit & Loss</h2>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', marginTop: '0.25rem', letterSpacing: '0.05em' }}>
-            Thursday, July 2, 2026
+        {/* Page Title & Add Button */}
+        <div className="flex-between" style={{ marginBottom: '2rem' }}>
+          <div>
+            <h2 style={{ fontSize: '1.6rem', fontWeight: 700, margin: 0, color: 'var(--text-main)' }}>Profit & Loss</h2>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', marginTop: '0.25rem', letterSpacing: '0.05em' }}>
+              Thursday, July 2, 2026
+            </div>
           </div>
+          <button 
+            onClick={() => setShowAddForm(prev => !prev)} 
+            className="prof-btn" 
+            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 700 }}
+          >
+            <Plus size={16} /> Add Ledger Item
+          </button>
         </div>
+
+        {/* Collapsible Add Item Form */}
+        {showAddForm && (
+          <div className="prof-card" style={{ marginBottom: '2rem', padding: '1.5rem 2rem', borderLeft: '4px solid var(--primary-text)' }}>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0, marginBottom: '1.5rem', color: 'var(--text-main)' }}>Add Financial Ledger Item</h3>
+            <form onSubmit={handleAddSubmit} style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+              <div style={{ flex: '1 1 200px', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>Category</label>
+                <input 
+                  type="text" 
+                  required
+                  placeholder="e.g. Electricity, Marketing" 
+                  value={newForm.category}
+                  onChange={e => setNewForm(prev => ({ ...prev, category: e.target.value }))}
+                  className="prof-input" 
+                />
+              </div>
+              <div style={{ flex: '1 1 250px', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>Description</label>
+                <input 
+                  type="text" 
+                  required
+                  placeholder="e.g. Monthly power bill payment" 
+                  value={newForm.desc}
+                  onChange={e => setNewForm(prev => ({ ...prev, desc: e.target.value }))}
+                  className="prof-input" 
+                />
+              </div>
+              <div style={{ flex: '1 1 120px', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>Amount (₹)</label>
+                <input 
+                  type="number" 
+                  required
+                  min="1"
+                  placeholder="e.g. 1500" 
+                  value={newForm.amount}
+                  onChange={e => setNewForm(prev => ({ ...prev, amount: e.target.value }))}
+                  className="prof-input" 
+                />
+              </div>
+              <div style={{ flex: '1 1 120px', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>Type</label>
+                <select 
+                  value={newForm.type}
+                  onChange={e => setNewForm(prev => ({ ...prev, type: e.target.value }))}
+                  className="prof-input"
+                  style={{ background: 'var(--bg-secondary)', color: 'var(--text-main)', cursor: 'pointer' }}
+                >
+                  <option value="Expense">Expense</option>
+                  <option value="Income">Income</option>
+                </select>
+              </div>
+              <div style={{ flex: '1 1 150px', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>Date</label>
+                <input 
+                  type="date" 
+                  required
+                  value={newForm.date}
+                  onChange={e => setNewForm(prev => ({ ...prev, date: e.target.value }))}
+                  className="prof-input" 
+                />
+              </div>
+              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <button type="submit" className="prof-btn" style={{ padding: '0.75rem 1.5rem', fontWeight: 700 }}>
+                  Save Item
+                </button>
+                <button 
+                  type="button" 
+                  onClick={() => setShowAddForm(false)} 
+                  className="prof-btn prof-btn-secondary" 
+                  style={{ padding: '0.75rem 1.25rem', fontWeight: 700 }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
 
         {/* Financial KPI Cards */}
         <div className="dashboard-grid" style={{ marginBottom: '2rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
@@ -124,7 +247,7 @@ const ProfitLoss = () => {
                 </tr>
               </thead>
               <tbody>
-                {transactions.map(item => {
+                {ledgerItems.map(item => {
                   const isPositive = item.amount > 0;
                   return (
                     <tr key={item.id} style={{ borderBottom: '1px solid var(--border-color)' }}>

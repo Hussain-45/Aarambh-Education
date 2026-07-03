@@ -24,6 +24,15 @@
   --success: #059669;
   --warning: #d97706;
   --danger: #dc2626;
+
+  /* Receipt Modal / Popups (Light Theme) */
+  --modal-bg: #ffffff;
+  --modal-border: rgba(0, 0, 0, 0.08);
+  --bg-muted: #f8f9fa;
+  --table-border: #e2e8f0;
+  --text-success: #15803d;
+  --text-danger: #b91c1c;
+  --shadow-modal: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
 body.theme-dark {
@@ -48,6 +57,15 @@ body.theme-dark {
   --success: #10b981;
   --warning: #f59e0b;
   --danger: #ef4444;
+
+  /* Receipt Modal / Popups (Dark Theme) */
+  --modal-bg: #1e293b;
+  --modal-border: rgba(255, 255, 255, 0.1);
+  --bg-muted: rgba(255, 255, 255, 0.04);
+  --table-border: rgba(255, 255, 255, 0.1);
+  --text-success: #34d399;
+  --text-danger: #f87171;
+  --shadow-modal: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
 }
 
 * {
