@@ -49,20 +49,20 @@ const Login = () => {
     // Role-Based Redirection Matrix
     let redirectMsg = '';
     let targetRoute = '/student-dashboard';
-    let loginAction = () => loginStudent('student', '9876543210', 'student');
+    let loginAction = () => loginStudent(formData.email, formData.password);
 
     if (selectedRole === 'admin') {
       redirectMsg = '[Frontend Route Triggered] Redirecting authenticated user to Admin Dashboard Panel...';
       targetRoute = '/dashboard';
-      loginAction = () => loginAdmin('admin', 'admin');
+      loginAction = () => loginAdmin(formData.email, formData.password);
     } else if (selectedRole === 'teacher') {
       redirectMsg = '[Frontend Route Triggered] Redirecting authenticated user to Teacher Workspace Portal...';
       targetRoute = '/teacher-dashboard';
-      loginAction = () => loginTeacher('teacher', 'pass');
+      loginAction = () => loginTeacher(formData.email, formData.password);
     } else {
       redirectMsg = '[Frontend Route Triggered] Redirecting authenticated user to Student & Parent Portal...';
       targetRoute = '/student-dashboard';
-      loginAction = () => loginStudent('student', '9876543210', 'student');
+      loginAction = () => loginStudent(formData.email, formData.password);
     }
 
     setRouteOverlayMsg(redirectMsg);
@@ -331,11 +331,11 @@ const Login = () => {
             <span 
               onClick={() => {
                 if (selectedRole === 'admin') {
-                  setFormData({ email: 'admin@aarambh.edu', password: 'password123' });
+                  setFormData({ email: 'admin', password: 'pass' });
                 } else if (selectedRole === 'teacher') {
-                  setFormData({ email: 'teacher@aarambh.edu', password: 'password123' });
+                  setFormData({ email: 'teacher', password: 'pass' });
                 } else {
-                  setFormData({ email: 'student@aarambh.edu', password: 'password123' });
+                  setFormData({ email: 'jaspreetmuskan93@gmail.com', password: 'Jaspreet@2005' });
                 }
               }}
               style={{ color: '#3b82f6', cursor: 'pointer', fontWeight: 800 }}
