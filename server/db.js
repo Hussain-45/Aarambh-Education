@@ -154,6 +154,24 @@ const db = new sqlite3.Database(dbPath, (err) => {
         value TEXT
       )`);
 
+      // Seed a default admin if no users exist
+      db.get(`SELECT COUNT(*) as count FROM users`, (err, row) => {
+        if (!err && row && row.count === 0) {
+          const bcrypt = require('bcrypt');
+          bcrypt.hash('pass', 10, (err, hash) => {
+            if (!err) {
+              db.run(`INSERT INTO users (name, username, password, role, email) VALUES (?, ?, ?, ?, ?)`,
+                ['System Admin', 'admin', hash, 'admin', 'admin@aarambh.edu'],
+                (err) => {
+                  if (err) console.error('Error seeding default admin:', err.message);
+                  else console.log('Default admin seeded successfully (admin / pass).');
+                }
+              );
+            }
+          });
+        }
+      });
+
       console.log('Database schema ensured.');
     });
   }

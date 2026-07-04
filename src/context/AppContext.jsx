@@ -40,58 +40,7 @@ export const AppProvider = ({ children }) => {
     localStorage.setItem('theme', theme);
   }, [theme]);
 
-  // Enforce jaspreet admin and teacher user presence and updates in localStorage users list
-  useEffect(() => {
-    const users = JSON.parse(localStorage.getItem('aarambh_users') || '[]');
-    let modified = false;
-
-    // 1. Enforce jaspreet admin
-    const hasJaspreet = users.find(u => (u.username || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase() === 'jaspreet');
-    if (!hasJaspreet) {
-      users.push({ id: 4, name: 'Jaspreet Singh', username: 'jaspreet', password: '1526', role: 'admin', email: 'jaspreet@aarambh.edu' });
-      modified = true;
-    } else if (hasJaspreet.password !== '1526') {
-      hasJaspreet.password = '1526';
-      modified = true;
-    }
-
-    // 2. Enforce teacher user
-    const hasTeacher = users.find(u => (u.username || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase() === 'teacher');
-    if (!hasTeacher) {
-      users.push({ id: 2, name: 'S. Jaspreet Singh', username: 'teacher', password: '1526', role: 'teacher', email: 'teacher@aarambh.edu', assignedClasses: ['10th Math', '10th Science'] });
-      modified = true;
-    } else {
-      if (hasTeacher.password !== '1526' || !hasTeacher.assignedClasses) {
-        hasTeacher.password = '1526';
-        hasTeacher.assignedClasses = ['10th Math', '10th Science'];
-        modified = true;
-      }
-    }
-
-    if (modified) {
-      localStorage.setItem('aarambh_users', JSON.stringify(users));
-    }
-
-    // Enforce assigned classes on S. Jaspreet Singh in teachers list
-    const teachersList = JSON.parse(localStorage.getItem('aarambh_teachers') || '[]');
-    let teachersModified = false;
-    const jaspreetTeacher = teachersList.find(t => t.username === 'teacher' || t.email === 'teacher@aarambh.edu');
-    if (jaspreetTeacher) {
-      if (!jaspreetTeacher.assignedClasses || jaspreetTeacher.assignedClasses.length === 0) {
-        jaspreetTeacher.assignedClasses = ['10th Math', '10th Science'];
-        teachersModified = true;
-      }
-    }
-    if (teachersModified) {
-      localStorage.setItem('aarambh_teachers', JSON.stringify(teachersList));
-    }
-
-    const savedAttendance = localStorage.getItem('aarambh_attendance');
-    if (savedAttendance) {
-      setAttendance(JSON.parse(savedAttendance));
-    }
-  }, []);
-
+  // Sync authentication states to localStorage
   useEffect(() => {
     if (authToken) {
       localStorage.setItem('token', authToken);
@@ -108,132 +57,29 @@ export const AppProvider = ({ children }) => {
     }
   }, [authToken, userRole, loggedInUser]);
 
-  // Seed default data if not initialized
+  // Enforce empty mock database on clean launch
   useEffect(() => {
     const initialized = localStorage.getItem('aarambh_db_initialized');
     if (!initialized) {
-      const defaultUsers = [
-        { id: 1, name: 'System Admin', username: 'admin', password: 'pass', role: 'admin', email: 'admin@aarambh.edu' },
-        { id: 4, name: 'Jaspreet Singh', username: 'jaspreet', password: '1526', role: 'admin', email: 'jaspreet@aarambh.edu' },
-        { id: 2, name: 'S. Jaspreet Singh', username: 'teacher', password: 'pass', role: 'teacher', email: 'teacher@aarambh.edu' },
-        { id: 3, name: 'Jaspreet Kaur', username: 'jaspreetmuskan93@gmail.com', password: 'Jaspreet@2005', role: 'student', fatherName: 'Jaspreet Singh', class: '10th Math', admission_number: 'AES1', parentPhone: '9876543210' }
-      ];
-      const defaultClasses = [
-        { id: 1, name: '10th Math', grade: 'Class A', time: '10:00 AM' },
-        { id: 2, name: '10th Science', grade: 'Class B', time: '11:30 AM' }
-      ];
-      const defaultStudents = [
-        { id: 3, name: 'Jaspreet Kaur', class: '10th Math', parentPhone: '9876543210', fatherName: 'Jaspreet Singh', username: 'jaspreetmuskan93@gmail.com', admission_number: 'AES1' }
-      ];
-      const defaultTeachers = [
-        { id: 2, name: 'S. Jaspreet Singh', email: 'teacher@aarambh.edu', username: 'teacher', assignedClasses: ['10th Math', '10th Science'] }
-      ];
-      
-      // Seed 12 months fees for default student
-      const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-      const defaultFees = months.map((month, idx) => ({
-        id: idx + 1,
-        studentId: 3,
-        month,
-        total: 1000,
-        paid: idx < 5 ? 1000 : 0,
-        status: idx < 5 ? 'Paid' : 'Pending',
-        dueDate: `10/${(idx + 1).toString().padStart(2, '0')}/2026`,
-        paymentMode: idx < 5 ? 'Cash' : null,
-        paymentDate: idx < 5 ? `05/${(idx + 1).toString().padStart(2, '0')}/2026` : null
-      }));
-
-      const defaultLibrary = [
-        { id: 1, title: 'Algebra Core Guide', subject: '10th Math', type: 'E-Book', link: 'https://example.com/algebra' }
-      ];
-      const defaultAssignments = [
-        { id: 1, title: 'Quadratic Equations Worksheet', subject: '10th Math', due_date: 'July 10, 2026' }
-      ];
-      const defaultAnnouncements = [
-        { id: 1, title: 'Special Physics Session', content: 'Sunday special lecture rescheduled to 9 AM.', target_class: 'All', date: new Date().toLocaleDateString() }
-      ];
-      const defaultRequests = [
-        { id: 101, role: 'student', name: 'Simran Singh', username: 'simran', password: 'pass', parentPhone: '9999988888', className: '10th Math', admission_number: 'AES2', fatherName: 'Gurbaksh Singh', status: 'pending' }
-      ];
-
-      localStorage.setItem('aarambh_users', JSON.stringify(defaultUsers));
-      localStorage.setItem('aarambh_classes', JSON.stringify(defaultClasses));
-      localStorage.setItem('aarambh_students', JSON.stringify(defaultStudents));
-      localStorage.setItem('aarambh_teachers', JSON.stringify(defaultTeachers));
-      localStorage.setItem('aarambh_fees', JSON.stringify(defaultFees));
-      localStorage.setItem('aarambh_library', JSON.stringify(defaultLibrary));
-      localStorage.setItem('aarambh_assignments', JSON.stringify(defaultAssignments));
-      localStorage.setItem('aarambh_announcements', JSON.stringify(defaultAnnouncements));
-      localStorage.setItem('aarambh_requests', JSON.stringify(defaultRequests));
+      localStorage.setItem('aarambh_users', JSON.stringify([]));
+      localStorage.setItem('aarambh_classes', JSON.stringify([]));
+      localStorage.setItem('aarambh_students', JSON.stringify([]));
+      localStorage.setItem('aarambh_teachers', JSON.stringify([]));
+      localStorage.setItem('aarambh_fees', JSON.stringify([]));
+      localStorage.setItem('aarambh_library', JSON.stringify([]));
+      localStorage.setItem('aarambh_assignments', JSON.stringify([]));
+      localStorage.setItem('aarambh_announcements', JSON.stringify([]));
+      localStorage.setItem('aarambh_requests', JSON.stringify([]));
       localStorage.setItem('aarambh_history', JSON.stringify([]));
       localStorage.setItem('aarambh_messages', JSON.stringify([]));
-      localStorage.setItem('aarambh_expenses', JSON.stringify([
-        { id: 1, title: 'Electricity Bill', amount: 1500, date: '06/10/2026' },
-        { id: 2, title: 'Internet charges', amount: 800, date: '06/12/2026' }
-      ]));
+      localStorage.setItem('aarambh_expenses', JSON.stringify([]));
+      localStorage.setItem('aarambh_attendance', JSON.stringify([]));
       localStorage.setItem('aarambh_db_initialized', 'true');
     }
+  }, []);
 
-    // Self-healing migration for existing databases to convert old formats (AES1001) to sequential (AES1)
-    const currentStudents = JSON.parse(localStorage.getItem('aarambh_students') || '[]');
-    let modified = false;
-    currentStudents.forEach((s, idx) => {
-      const targetNum = `AES${idx + 1}`;
-      if (s.admission_number !== targetNum) {
-        s.admission_number = targetNum;
-        modified = true;
-      }
-    });
-    if (modified) {
-      localStorage.setItem('aarambh_students', JSON.stringify(currentStudents));
-      
-      const currentUsers = JSON.parse(localStorage.getItem('aarambh_users') || '[]');
-      currentUsers.forEach(u => {
-        if (u.role === 'student') {
-          const matchingStudent = currentStudents.find(s => s.id === u.id);
-          if (matchingStudent) {
-            u.admission_number = matchingStudent.admission_number;
-          }
-        }
-      });
-      localStorage.setItem('aarambh_users', JSON.stringify(currentUsers));
-    }
-
-    // Self-healing migration to update default student portal credentials
-    const currentUsersList = JSON.parse(localStorage.getItem('aarambh_users') || '[]');
-    let usersUpdated = false;
-    const migratedUsers = currentUsersList.map(u => {
-      if (u.role === 'student' && u.username === 'student') {
-        usersUpdated = true;
-        return {
-          ...u,
-          username: 'jaspreetmuskan93@gmail.com',
-          password: 'Jaspreet@2005'
-        };
-      }
-      return u;
-    });
-    if (usersUpdated) {
-      localStorage.setItem('aarambh_users', JSON.stringify(migratedUsers));
-    }
-
-    const currentStudentsList = JSON.parse(localStorage.getItem('aarambh_students') || '[]');
-    let studentsUpdated = false;
-    const migratedStudents = currentStudentsList.map(s => {
-      if (s.username === 'student') {
-        studentsUpdated = true;
-        return {
-          ...s,
-          username: 'jaspreetmuskan93@gmail.com'
-        };
-      }
-      return s;
-    });
-    if (studentsUpdated) {
-      localStorage.setItem('aarambh_students', JSON.stringify(migratedStudents));
-    }
-
-    // Load state from localStorage
+  // Load state from localStorage
+  useEffect(() => {
     setClasses(JSON.parse(localStorage.getItem('aarambh_classes') || '[]'));
     setStudents(JSON.parse(localStorage.getItem('aarambh_students') || '[]'));
     setTeachers(JSON.parse(localStorage.getItem('aarambh_teachers') || '[]'));
