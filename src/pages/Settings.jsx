@@ -275,7 +275,7 @@ const Settings = () => {
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '2rem', alignItems: 'start', marginBottom: '2rem' }}>
             
-            {/* Left Column: Personal, Security & billing */}
+            {/* Left Column: Personal, Security, regional, appearance & privacy */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
               
               {/* Profile Card */}
@@ -347,7 +347,52 @@ const Settings = () => {
                 </div>
               </div>
 
-              {/* Data & Privacy Card */}
+              {/* Regional Settings */}
+              <div className="prof-card" style={{ margin: 0 }}>
+                <h3 style={{ margin: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Globe size={18} /> Regional Settings
+                </h3>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Display Language</label>
+                    <select className="prof-input" value={language} onChange={e => handleLanguageChange(e.target.value)}>
+                      <option value="English">English</option>
+                      <option value="Hindi">Hindi</option>
+                      <option value="Spanish">Spanish</option>
+                      <option value="French">French</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Timezone</label>
+                    <select className="prof-input" disabled>
+                      <option>Asia/Kolkata (IST)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Appearance */}
+              <div className="prof-card" style={{ margin: 0 }}>
+                <h3 style={{ margin: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Moon size={18} /> Appearance
+                </h3>
+                <div className="flex-between">
+                  <div>
+                    <p style={{ margin: 0, fontWeight: 500 }}>Dark Mode</p>
+                    <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Toggle between light and dark themes</p>
+                  </div>
+                  <button 
+                    onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')} 
+                    className={`prof-btn ${theme === 'dark' ? '' : 'prof-btn-outline'}`}
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                  >
+                    {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
+                    {theme === 'light' ? 'Enable Dark Mode' : 'Enable Light Mode'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Data & Privacy Card (Danger Zone) */}
               <div className="prof-card" style={{ margin: 0, border: '1px solid var(--danger)' }}>
                 <h3 style={{ margin: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--danger)' }}>
                   <Lock size={18} /> Data & Privacy
@@ -370,26 +415,9 @@ const Settings = () => {
                 </div>
               </div>
 
-              {/* Billing Card (Admin Only) */}
-              {loggedInUser?.role === 'admin' && (
-                <div className="prof-card" style={{ margin: 0 }}>
-                  <h3 style={{ margin: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <MonitorSmartphone size={18} /> Billing & Subscription
-                  </h3>
-                  <div style={{ padding: '1rem', background: 'var(--bg-main)', borderRadius: '8px', border: '1px solid var(--border-color)', marginBottom: '1rem' }}>
-                    <div className="flex-between" style={{ marginBottom: '0.5rem' }}>
-                      <span style={{ fontWeight: 600 }}>Aarambh Premium Plan</span>
-                      <span className="badge badge-success">Active</span>
-                    </div>
-                    <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Next billing date: Jan 01, 2025</p>
-                  </div>
-                  <button className="prof-btn prof-btn-outline" style={{ padding: '0.5rem 1rem' }}>Manage Subscription</button>
-                </div>
-              )}
-
             </div>
 
-            {/* Right Column: Communications, Preferences & Backup */}
+            {/* Right Column: Communications, System Config & Operations */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
               
               {/* WhatsApp Robot Link */}
@@ -478,6 +506,43 @@ const Settings = () => {
                 </div>
               )}
 
+              {/* Connected Apps & Integrations */}
+              <div className="prof-card" style={{ margin: 0 }}>
+                <h3 style={{ margin: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Cloud size={18} /> Connected Apps & Integrations
+                </h3>
+                
+                <div className="flex-between" style={{ paddingBottom: '1rem', borderBottom: '1px solid var(--border-color)', marginBottom: '1rem' }}>
+                  <div>
+                    <p style={{ margin: 0, fontWeight: 500 }}>Google Drive Sync</p>
+                    <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Automatically backup Library materials and Assignments</p>
+                  </div>
+                  <button 
+                    onClick={() => setDriveConnected(!driveConnected)} 
+                    className={`prof-btn ${driveConnected ? 'prof-btn-outline' : ''}`}
+                    style={{ padding: '0.5rem 1rem' }}
+                  >
+                    {driveConnected ? 'Disconnect' : 'Connect'}
+                  </button>
+                </div>
+
+                <div className="flex-between" style={{ paddingBottom: '1rem', borderBottom: '1px solid var(--border-color)', marginBottom: '1rem' }}>
+                  <div>
+                    <p style={{ margin: 0, fontWeight: 500 }}>Zoom Integration</p>
+                    <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Generate live class links directly from the calendar</p>
+                  </div>
+                  <button className="prof-btn" style={{ padding: '0.5rem 1rem' }}>Connect</button>
+                </div>
+
+                <div className="flex-between">
+                  <div>
+                    <p style={{ margin: 0, fontWeight: 500 }}>WhatsApp Business API</p>
+                    <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Send automated fee reminders via WhatsApp</p>
+                  </div>
+                  <button className="prof-btn" style={{ padding: '0.5rem 1rem' }}>Connect</button>
+                </div>
+              </div>
+
               {/* Notification Preferences */}
               <div className="prof-card" style={{ margin: 0 }}>
                 <h3 style={{ margin: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -520,87 +585,22 @@ const Settings = () => {
                 </div>
               </div>
 
-              {/* Regional Settings */}
-              <div className="prof-card" style={{ margin: 0 }}>
-                <h3 style={{ margin: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Globe size={18} /> Regional Settings
-                </h3>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Display Language</label>
-                    <select className="prof-input" value={language} onChange={e => handleLanguageChange(e.target.value)}>
-                      <option value="English">English</option>
-                      <option value="Hindi">Hindi</option>
-                      <option value="Spanish">Spanish</option>
-                      <option value="French">French</option>
-                    </select>
+              {/* Billing Card (Admin Only) */}
+              {loggedInUser?.role === 'admin' && (
+                <div className="prof-card" style={{ margin: 0 }}>
+                  <h3 style={{ margin: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <MonitorSmartphone size={18} /> Billing & Subscription
+                  </h3>
+                  <div style={{ padding: '1rem', background: 'var(--bg-main)', borderRadius: '8px', border: '1px solid var(--border-color)', marginBottom: '1rem' }}>
+                    <div className="flex-between" style={{ marginBottom: '0.5rem' }}>
+                      <span style={{ fontWeight: 600 }}>Aarambh Premium Plan</span>
+                      <span className="badge badge-success">Active</span>
+                    </div>
+                    <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Next billing date: Jan 01, 2025</p>
                   </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Timezone</label>
-                    <select className="prof-input" disabled>
-                      <option>Asia/Kolkata (IST)</option>
-                    </select>
-                  </div>
+                  <button className="prof-btn prof-btn-outline" style={{ padding: '0.5rem 1rem' }}>Manage Subscription</button>
                 </div>
-              </div>
-
-              {/* Connected Apps & Integrations */}
-              <div className="prof-card" style={{ margin: 0 }}>
-                <h3 style={{ margin: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Cloud size={18} /> Connected Apps & Integrations
-                </h3>
-                
-                <div className="flex-between" style={{ paddingBottom: '1rem', borderBottom: '1px solid var(--border-color)', marginBottom: '1rem' }}>
-                  <div>
-                    <p style={{ margin: 0, fontWeight: 500 }}>Google Drive Sync</p>
-                    <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Automatically backup Library materials and Assignments</p>
-                  </div>
-                  <button 
-                    onClick={() => setDriveConnected(!driveConnected)} 
-                    className={`prof-btn ${driveConnected ? 'prof-btn-outline' : ''}`}
-                    style={{ padding: '0.5rem 1rem' }}
-                  >
-                    {driveConnected ? 'Disconnect' : 'Connect'}
-                  </button>
-                </div>
-
-                <div className="flex-between" style={{ paddingBottom: '1rem', borderBottom: '1px solid var(--border-color)', marginBottom: '1rem' }}>
-                  <div>
-                    <p style={{ margin: 0, fontWeight: 500 }}>Zoom Integration</p>
-                    <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Generate live class links directly from the calendar</p>
-                  </div>
-                  <button className="prof-btn" style={{ padding: '0.5rem 1rem' }}>Connect</button>
-                </div>
-
-                <div className="flex-between">
-                  <div>
-                    <p style={{ margin: 0, fontWeight: 500 }}>WhatsApp Business API</p>
-                    <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Send automated fee reminders via WhatsApp</p>
-                  </div>
-                  <button className="prof-btn" style={{ padding: '0.5rem 1rem' }}>Connect</button>
-                </div>
-              </div>
-
-              {/* Appearance */}
-              <div className="prof-card" style={{ margin: 0 }}>
-                <h3 style={{ margin: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Moon size={18} /> Appearance
-                </h3>
-                <div className="flex-between">
-                  <div>
-                    <p style={{ margin: 0, fontWeight: 500 }}>Dark Mode</p>
-                    <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Toggle between light and dark themes</p>
-                  </div>
-                  <button 
-                    onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')} 
-                    className={`prof-btn ${theme === 'dark' ? '' : 'prof-btn-outline'}`}
-                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-                  >
-                    {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
-                    {theme === 'light' ? 'Enable Dark Mode' : 'Enable Light Mode'}
-                  </button>
-                </div>
-              </div>
+              )}
 
             </div>
 
