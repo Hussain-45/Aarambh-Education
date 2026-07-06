@@ -7,8 +7,10 @@ import { exportToPDF } from '../utils/exportUtils';
 import FeeReceiptModal from '../components/FeeReceiptModal';
 
 const StudentReceipts = () => {
-  const { loggedInUser, fees, recordFeePayment, students } = useContext(AppContext);
+  const { loggedInUser, fees, recordFeePayment, students, submitUpiPayment } = useContext(AppContext);
   const [selectedPendingId, setSelectedPendingId] = useState('');
+  const [upiTxnId, setUpiTxnId] = useState('');
+  const [submittingUpi, setSubmittingUpi] = useState(false);
   
   // Receipt modal states
   const [selectedReceiptFee, setSelectedReceiptFee] = useState(null);
@@ -82,6 +84,22 @@ const StudentReceipts = () => {
     const fee = pendingFees.find(f => f.id.toString() === selectedPendingId);
     if (fee) {
       handleMockPay(fee);
+    }
+  };
+
+  const handleUpiPaymentSubmit = async (e) => {
+    e.preventDefault();
+    const fee = pendingFees.find(f => f.id.toString() === selectedPendingId);
+    if (!fee) return;
+    if (!upiTxnId.trim() || upiTxnId.trim().length !== 12 || isNaN(upiTxnId.trim())) {
+      alert('Please enter a valid 12-digit UPI Transaction Ref ID.');
+      return;
+    }
+    setSubmittingUpi(true);
+    const success = await submitUpiPayment(fee.id, upiTxnId.trim());
+    setSubmittingUpi(false);
+    if (success) {
+      setUpiTxnId('');
     }
   };
 
@@ -186,24 +204,84 @@ const StudentReceipts = () => {
                 <h3 style={{ fontSize: '1.1rem', fontWeight: 600, margin: '0 0 1rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <CreditCard size={18} style={{ color: 'var(--primary-text)' }} /> Quick Pay Portal
                 </h3>
-                {pendingFees.length > 0 ? (
-                  <form onSubmit={handleQuickPaySubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-                    <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>Select Pending Month:</label>
-                    <select
-                      value={selectedPendingId}
-                      onChange={e => setSelectedPendingId(e.target.value)}
-                      className="prof-input"
-                      style={{ fontSize: '0.85rem', padding: '0.5rem' }}
-                    >
-                      {pendingFees.map(f => (
-                        <option key={f.id} value={f.id}>{f.month} — Due: ₹{f.total - f.paid}</option>
-                      ))}
-                    </select>
-                    <button type="submit" className="prof-btn" style={{ width: '100%', padding: '0.6rem', fontSize: '0.85rem' }}>
-                      Mock Online Payment
-                    </button>
-                  </form>
-                ) : (
+                {pendingFees.length > 0 ? (() => {
+                  const currentSelectedFee = pendingFees.find(f => f.id.toString() === selectedPendingId) || pendingFees[0];
+                  const remainingAmount = currentSelectedFee ? (currentSelectedFee.total - currentSelectedFee.paid) : 0;
+                  const upiUrl = `upi://pay?pa=aarambh@upi&pn=Aarambh+Education&am=${remainingAmount}&tn=Fee+For+${currentSelectedFee?.month}`;
+                  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(upiUrl)}`;
+
+                  return (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                      <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>Select Pending Month:</label>
+                      <select
+                        value={selectedPendingId}
+                        onChange={e => setSelectedPendingId(e.target.value)}
+                        className="prof-input"
+                        style={{ fontSize: '0.85rem', padding: '0.5rem', marginBottom: '0.5rem' }}
+                      >
+                        {pendingFees.map(f => (
+                          <option key={f.id} value={f.id}>{f.month} — Due: ₹{f.total - f.paid} ({f.status})</option>
+                        ))}
+                      </select>
+
+                      {currentSelectedFee?.upiPaymentStatus === 'pending_verification' ? (
+                        <div style={{ background: 'var(--secondary)', padding: '1rem', borderRadius: '8px', borderLeft: '3px solid var(--warning)', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                          <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            ⏳ Verification Pending
+                          </span>
+                          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                            UPI ID submitted: <strong>{currentSelectedFee.upiTransactionId}</strong>
+                          </span>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                            Admin is currently verifying this payment. Receipts will be generated upon approval.
+                          </span>
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                          {currentSelectedFee?.upiPaymentStatus === 'rejected' && (
+                            <div style={{ background: 'rgba(239, 68, 68, 0.1)', padding: '0.8rem', borderRadius: '6px', borderLeft: '3px solid var(--danger)', fontSize: '0.8rem', color: 'var(--danger)' }}>
+                              <strong>❌ Rejection Reason:</strong> {currentSelectedFee.upiPaymentNotes || 'Invalid Transaction ID'}
+                            </div>
+                          )}
+                          
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'white', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)', margin: '0 auto', maxWidth: '200px' }}>
+                            <img src={qrCodeUrl} alt="UPI QR Code" style={{ width: '150px', height: '150px' }} />
+                            <span style={{ fontSize: '0.75rem', color: '#666', marginTop: '0.5rem', fontWeight: 600 }}>Pay ₹{remainingAmount} via UPI</span>
+                          </div>
+
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center' }}>
+                            UPI ID: <strong>aarambh@upi</strong> | Payee: <strong>Aarambh Education</strong>
+                          </div>
+
+                          <form onSubmit={handleUpiPaymentSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            <input
+                              type="text"
+                              maxLength="12"
+                              placeholder="Enter 12-digit UPI Ref/Transaction ID"
+                              value={upiTxnId}
+                              onChange={e => setUpiTxnId(e.target.value.replace(/\D/g, ''))}
+                              className="prof-input"
+                              style={{ padding: '0.5rem', fontSize: '0.85rem', textAlign: 'center' }}
+                              required
+                            />
+                            <button type="submit" disabled={submittingUpi} className="prof-btn" style={{ width: '100%', padding: '0.5rem', fontSize: '0.85rem' }}>
+                              {submittingUpi ? 'Submitting...' : 'Submit UPI Reference'}
+                            </button>
+                          </form>
+
+                          <button 
+                            type="button" 
+                            onClick={() => handleMockPay(currentSelectedFee)} 
+                            className="prof-btn prof-btn-secondary" 
+                            style={{ width: '100%', padding: '0.5rem', fontSize: '0.8rem', opacity: 0.7 }}
+                          >
+                            Simulate Cash/Mock Payment (Direct)
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })() : (
                   <div style={{ textAlign: 'center', padding: '1rem 0' }}>
                     <div style={{ fontSize: '1.8rem', marginBottom: '0.4rem' }}>🎉</div>
                     <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--success)' }}>All Dues Cleared!</span>

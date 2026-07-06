@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { LayoutDashboard, Users, BookOpen, CheckSquare, Settings, LogOut, IndianRupee, MessageSquare, Calendar, ClipboardList, Clock } from 'lucide-react';
+import { LayoutDashboard, Users, BookOpen, CheckSquare, Settings, LogOut, IndianRupee, MessageSquare, Calendar, ClipboardList, Clock, Trophy, GraduationCap, Sparkles } from 'lucide-react';
 import { AppContext } from '../context/AppContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import logoImg from '../assets/image_7cc2c3.jpg';
@@ -74,6 +74,8 @@ const Sidebar = () => {
             <SidebarItem icon={CheckSquare} label="Attendance" active={path === '/attendance'} onClick={() => navigate('/attendance')} />
             <SidebarItem icon={IndianRupee} label="Fees" active={path === '/fees'} onClick={() => navigate('/fees')} />
             <SidebarItem icon={BookOpen} label="Assignments" active={path === '/assignments'} onClick={() => navigate('/assignments')} />
+            <SidebarItem icon={Trophy} label="Quizzes & Exams" active={path === '/quizzes'} onClick={() => navigate('/quizzes')} />
+            <SidebarItem icon={GraduationCap} label="Syllabus Tracker" active={path === '/syllabus'} onClick={() => navigate('/syllabus')} />
             <SidebarItem icon={BookOpen} label="Study Material" active={path === '/library'} onClick={() => navigate('/library')} />
             <SidebarItem icon={MessageSquare} label="Announcements" active={path === '/messages'} onClick={() => navigate('/messages')} />
             <SidebarItem icon={Calendar} label="Events" active={path === '/calendar'} onClick={() => navigate('/calendar')} />
@@ -88,6 +90,8 @@ const Sidebar = () => {
             <SidebarItem icon={LayoutDashboard} label="Dashboard" active={path === '/teacher-dashboard'} onClick={() => navigate('/teacher-dashboard')} />
             <SidebarItem icon={CheckSquare} label="Attendance" active={path === '/attendance'} onClick={() => navigate('/attendance')} />
             <SidebarItem icon={BookOpen} label="Assignments" active={path === '/assignments'} onClick={() => navigate('/assignments')} />
+            <SidebarItem icon={Trophy} label="Quizzes & Exams" active={path === '/quizzes'} onClick={() => navigate('/quizzes')} />
+            <SidebarItem icon={GraduationCap} label="Syllabus Tracker" active={path === '/syllabus'} onClick={() => navigate('/syllabus')} />
             <SidebarItem icon={MessageSquare} label="Announcements" active={path === '/messages'} onClick={() => navigate('/messages')} />
             <SidebarItem icon={BookOpen} label="My Batches" active={path === '/classes'} onClick={() => navigate('/classes')} />
             <SidebarItem icon={Calendar} label="Events" active={path === '/calendar'} onClick={() => navigate('/calendar')} />
@@ -102,6 +106,9 @@ const Sidebar = () => {
             <SidebarItem icon={CheckSquare} label="My Attendance" active={path === '/student-attendance'} onClick={() => navigate('/student-attendance')} />
             <SidebarItem icon={IndianRupee} label="My Receipts" active={path === '/student-receipts'} onClick={() => navigate('/student-receipts')} />
             <SidebarItem icon={BookOpen} label="My Assignments" active={path === '/assignments'} onClick={() => navigate('/assignments')} />
+            <SidebarItem icon={Trophy} label="Quizzes & Exams" active={path === '/quizzes'} onClick={() => navigate('/quizzes')} />
+            <SidebarItem icon={Sparkles} label="AI Study Tutor" active={path === '/study-companion'} onClick={() => navigate('/study-companion')} />
+            <SidebarItem icon={GraduationCap} label="Syllabus Progress" active={path === '/syllabus'} onClick={() => navigate('/syllabus')} />
             <SidebarItem icon={Calendar} label="Events" active={path === '/calendar'} onClick={() => navigate('/calendar')} />
             <SidebarItem icon={BookOpen} label="Study Material" active={path === '/library'} onClick={() => navigate('/library')} />
           </>

@@ -1147,7 +1147,8 @@ app.get('/api/fees', authenticateToken, (req, res) => {
     // mapping db snake_case to frontend camelCase
     const mapped = rows.map(r => ({
       id: r.id, studentId: r.student_id, total: r.total, paid: r.paid, status: r.status, dueDate: r.due_date,
-      paymentMode: r.payment_mode, paymentDate: r.payment_date, month: r.month
+      paymentMode: r.payment_mode, paymentDate: r.payment_date, month: r.month,
+      upiTransactionId: r.upi_transaction_id, upiPaymentStatus: r.upi_payment_status, upiPaymentNotes: r.upi_payment_notes
     }));
     res.json(mapped);
   });
@@ -1359,6 +1360,141 @@ app.put('/api/fees/:id/pay', authenticateToken, (req, res) => {
       res.json({ success: true, paid: newPaid, status: newStatus, paymentMode, paymentDate });
     });
   });
+});
+
+// Submit UPI payment verification request
+app.put('/api/fees/:id/submit-upi', authenticateToken, (req, res) => {
+  const feeId = parseInt(req.params.id);
+  const { upiTransactionId } = req.body;
+
+  if (!upiTransactionId) {
+    return res.status(400).json({ error: 'UPI Transaction ID is required' });
+  }
+
+  db.get(`SELECT * FROM fees WHERE id = ?`, [feeId], (err, fee) => {
+    if (err || !fee) {
+      return res.status(404).json({ error: 'Fee record not found' });
+    }
+
+    if (req.user.role !== 'admin' && req.user.id !== fee.student_id) {
+      return res.sendStatus(403);
+    }
+
+    db.run(
+      `UPDATE fees SET payment_mode = 'UPI', upi_transaction_id = ?, upi_payment_status = 'pending_verification', status = 'Pending Verification' WHERE id = ?`,
+      [upiTransactionId, feeId],
+      (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        logAction('UPI_SUBMITTED', `Student ID ${fee.student_id} submitted UPI Transaction ID ${upiTransactionId} for fee ID ${feeId}`);
+        res.json({ success: true, message: 'UPI transaction submitted for verification' });
+      }
+    );
+  });
+});
+
+// Verify UPI payment (Admin only)
+app.put('/api/fees/:id/verify-upi', authenticateToken, (req, res) => {
+  if (req.user.role !== 'admin') return res.sendStatus(403);
+  const feeId = parseInt(req.params.id);
+  const { status, notes } = req.body;
+
+  if (status !== 'verified' && status !== 'rejected') {
+    return res.status(400).json({ error: 'Invalid status' });
+  }
+
+  db.get(
+    `SELECT fees.*, users.name, users.parentPhone, users.email, users.className, users.admission_number, users.discountPercent 
+     FROM fees JOIN users ON fees.student_id = users.id WHERE fees.id = ?`,
+    [feeId],
+    (err, fee) => {
+      if (err || !fee) {
+        return res.status(404).json({ error: 'Fee record not found' });
+      }
+
+      const paymentDate = new Date().toLocaleDateString();
+      if (status === 'verified') {
+        const newPaid = fee.total;
+        db.run(
+          `UPDATE fees SET paid = ?, status = 'Paid', payment_mode = 'UPI', payment_date = ?, upi_payment_status = 'verified', upi_payment_notes = ? WHERE id = ?`,
+          [newPaid, paymentDate, notes || 'Approved by Admin', feeId],
+          (err) => {
+            if (err) return res.status(500).json({ error: err.message });
+
+            logAction('FEE_PAID', `Admin verified UPI payment of Rs. ${fee.total} for student ID ${fee.student_id}. Transaction ID: ${fee.upi_transaction_id}`);
+
+            const receiptNo = `REC-${Date.now().toString().slice(-6)}`;
+            
+            if (fee.parentPhone) {
+              const waReceiptMessage = `*🧾 AARAMBH INSTITUTION - UPI PAYMENT VERIFIED*\n` +
+                `----------------------------------------\n` +
+                `*Receipt No:* ${receiptNo}\n` +
+                `*Date:* ${paymentDate}\n` +
+                `*Student Name:* ${fee.name}\n` +
+                `*Admission No:* ${fee.admission_number || 'N/A'}\n` +
+                `*Class/Batch:* ${fee.className || 'N/A'}\n\n` +
+                `*Payment Details:*\n` +
+                `- *Month:* ${fee.month || 'Current'}\n` +
+                `- *Total Fee:* ₹${fee.total}\n` +
+                `- *UPI Transaction ID:* ${fee.upi_transaction_id}\n` +
+                `- *Status:* PAID ✅ (Verified)\n\n` +
+                `Thank you for your payment!\n` +
+                `_For any queries, contact accounts@aarambh.edu_`;
+                
+              sendAutoSms(fee.parentPhone, waReceiptMessage);
+            }
+
+            if (fee.email && transporter) {
+              transporter.sendMail({
+                from: '"Aarambh Invoice Service" <billing@aarambh.edu>',
+                to: fee.email,
+                subject: `🧾 UPI PAYMENT VERIFIED: ${fee.name} - ${fee.month || 'Current'} Month`,
+                text: `Dear Parent,\n\nWe have verified the UPI payment (Transaction ID: ${fee.upi_transaction_id}) of Rs. ${fee.total} for ${fee.name} for the month of ${fee.month || 'Current'}.\n\nReceipt Details:\n- Receipt No: ${receiptNo}\n- Amount: Rs. ${fee.total}\n- Payment Mode: UPI (Verified)\n- Payment Date: ${paymentDate}\n\nThank you for choosing Aarambh!\n\nBest regards,\nAarambh Accounts`,
+                html: `<div style="font-family: sans-serif; padding: 25px; border: 1px solid #eaeaea; border-radius: 8px; max-width: 600px; margin: 0 auto; background-color: #fafafa;">
+                         <div style="text-align: center; border-bottom: 2px solid #2ecc71; padding-bottom: 15px; margin-bottom: 20px;">
+                           <h2 style="color: #2ecc71; margin: 0; font-size: 24px;">Aarambh Tuition Centre</h2>
+                           <small style="color: #666; text-transform: uppercase; letter-spacing: 1px;">UPI Payment Verified</small>
+                         </div>
+                         <p>Dear Parent,</p>
+                         <p>We have successfully verified your UPI payment for the student.</p>
+                         <div style="background-color: #ffffff; padding: 15px; border-radius: 6px; border: 1px dashed #ddd; margin: 20px 0;">
+                           <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                             <tr><td style="padding: 6px 0; color: #666;"><strong>Receipt No:</strong></td><td style="padding: 6px 0; text-align: right;">${receiptNo}</td></tr>
+                             <tr><td style="padding: 6px 0; color: #666;"><strong>Student Name:</strong></td><td style="padding: 6px 0; text-align: right;"><strong>${fee.name}</strong></td></tr>
+                             <tr><td style="padding: 6px 0; color: #666;"><strong>For Month:</strong></td><td style="padding: 6px 0; text-align: right;">${fee.month || 'Current'}</td></tr>
+                             <tr><td style="padding: 6px 0; color: #666;"><strong>UPI Txn ID:</strong></td><td style="padding: 6px 0; text-align: right;">${fee.upi_transaction_id}</td></tr>
+                             <tr style="border-top: 1px solid #eee; margin-top: 10px;"><td style="padding: 10px 0; color: #666; font-size: 16px;"><strong>Amount Paid:</strong></td><td style="padding: 10px 0; text-align: right; font-size: 18px; color: #2ecc71;"><strong>Rs. ${fee.total}</strong></td></tr>
+                           </table>
+                         </div>
+                       </div>`
+              }).catch(err => console.error('[Fee Invoice Email Error]', err.message));
+            }
+
+            res.json({ success: true, message: 'UPI Payment verified successfully' });
+          }
+        );
+      } else {
+        db.run(
+          `UPDATE fees SET upi_payment_status = 'rejected', upi_payment_notes = ?, status = 'Pending' WHERE id = ?`,
+          [notes || 'Rejected by Admin', feeId],
+          (err) => {
+            if (err) return res.status(500).json({ error: err.message });
+            logAction('UPI_REJECTED', `Admin rejected UPI payment for student ID ${fee.student_id}. Note: ${notes}`);
+
+            if (fee.parentPhone) {
+              const waRejectionMessage = `*⚠️ AARAMBH INSTITUTION - UPI PAYMENT REJECTED*\n` +
+                `----------------------------------------\n` +
+                `We were unable to verify the UPI payment of ₹${fee.total} for the month of *${fee.month}* for student *${fee.name}*.\n\n` +
+                `*Reason:* ${notes || 'Invalid Transaction ID'}\n\n` +
+                `Please double-check your reference number and submit it again in the Student Portal.`;
+              sendAutoSms(fee.parentPhone, waRejectionMessage);
+            }
+
+            res.json({ success: true, message: 'UPI Payment verification rejected' });
+          }
+        );
+      }
+    }
+  );
 });
 
 // Send automatic fee reminders to all students with pending fees
@@ -2272,6 +2408,88 @@ CRITICAL PRIVACY RULE: You are strictly forbidden from discussing or answering q
   }
 });
 
+// AI Study Companion / Academic Tutor Endpoint (Google Gemini)
+app.post('/api/ai/study-help', authenticateToken, async (req, res) => {
+  const { subject, question, history } = req.body;
+  const apiKey = process.env.GEMINI_API_KEY;
+
+  if (!subject || !question) {
+    return res.status(400).json({ error: 'Subject and Question are required' });
+  }
+
+  // 1. Offline Mode Fallback
+  if (!apiKey || apiKey === 'YOUR_API_KEY_HERE') {
+    return res.json({
+      success: true,
+      text: `***[OFFLINE MODE]***
+I am currently operating offline because the Gemini API key is not configured.
+Here is a quick study guide for **${subject}**:
+* Re-read your chapter notes.
+* Solve mock questions in the **Quizzes** section.
+* Contact your teacher directly in the classroom!
+
+To enable the interactive AI Study Tutor, please add your Google Gemini API Key in the server configuration.`
+    });
+  }
+
+  // 2. Online Mode using Google Gemini API
+  try {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+
+    const contents = [];
+
+    const systemPromptText = `You are the Aarambh AI Study Tutor, a friendly and highly knowledgeable academic tutor. 
+Your specialty is teaching and explaining concepts in: **${subject}**.
+Follow these strict rules:
+1. Focus entirely on academic and learning topics relevant to ${subject}.
+2. If the question is a math, science, or programming problem, do NOT just output the final answer immediately. Walk through the explanation step-by-step.
+3. Be encouraging and end your response by presenting one follow-up check-for-understanding practice question or quiz item for the student.
+4. Render all mathematical equations, chemical formulas, and code snippets in clean Markdown format (e.g. use standard LaTeX notation like $E=mc^2$ or code fences).
+5. Politely refuse to answer any non-academic or system administrative questions (e.g. fees, schedules, passwords, database settings).`;
+
+    contents.push({
+      role: 'user',
+      parts: [{ text: `System Prompt: ${systemPromptText}` }]
+    });
+
+    contents.push({
+      role: 'model',
+      parts: [{ text: `Understood! I am now locked in as the Aarambh AI Study Tutor for ${subject}. I will provide step-by-step academic explanations, utilize clean Markdown/LaTeX formatting, refuse non-academic queries, and conclude my responses with a checking question.` }]
+    });
+
+    if (history && Array.isArray(history)) {
+      history.forEach(msg => {
+        contents.push({
+          role: msg.sender === 'user' ? 'user' : 'model',
+          parts: [{ text: msg.text }]
+        });
+      });
+    }
+
+    contents.push({
+      role: 'user',
+      parts: [{ text: question }]
+    });
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Gemini API Response Status: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    const botText = data.candidates[0].content.parts[0].text;
+    res.json({ success: true, text: botText });
+  } catch (error) {
+    console.error('[AI TUTOR ERROR]', error);
+    res.status(500).json({ success: false, error: 'Failed to contact AI provider' });
+  }
+});
+
 // Announcements Endpoints
 app.get('/api/announcements', authenticateToken, (req, res) => {
   if (req.user.role === 'student') {
@@ -2587,6 +2805,285 @@ const checkAndSendBirthdayGreetings = () => {
 setInterval(checkAndSendBirthdayGreetings, 24 * 60 * 60 * 1000);
 // Also trigger alert check once on boot after 8 seconds
 setTimeout(checkAndSendBirthdayGreetings, 8000);
+
+// --- QUIZ & MOCK TEST PORTAL ENDPOINTS ---
+
+// Get all quizzes
+app.get('/api/quizzes', authenticateToken, (req, res) => {
+  if (req.user.role === 'student') {
+    db.get(`SELECT className FROM users WHERE id = ?`, [req.user.id], (err, user) => {
+      if (err || !user) return res.status(500).json({ error: 'Failed to retrieve user class' });
+      const studentClass = user.className || 'General';
+      db.all(
+        `SELECT * FROM quizzes WHERE class_name = ? OR class_name = 'All' ORDER BY id DESC`,
+        [studentClass],
+        (err, rows) => {
+          if (err) return res.status(500).json({ error: err.message });
+          res.json(rows);
+        }
+      );
+    });
+  } else {
+    db.all(`SELECT * FROM quizzes ORDER BY id DESC`, [], (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(rows);
+    });
+  }
+});
+
+// Get quiz questions
+app.get('/api/quizzes/:id/questions', authenticateToken, (req, res) => {
+  const quizId = parseInt(req.params.id);
+  const isStudent = req.user.role === 'student';
+  
+  const columns = isStudent 
+    ? `id, quiz_id, question_text, option_a, option_b, option_c, option_d` 
+    : `id, quiz_id, question_text, option_a, option_b, option_c, option_d, correct_option`;
+
+  db.all(
+    `SELECT ${columns} FROM quiz_questions WHERE quiz_id = ? ORDER BY id ASC`,
+    [quizId],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      
+      const mapped = rows.map(r => ({
+        id: r.id,
+        quizId: r.quiz_id,
+        questionText: r.question_text,
+        optionA: r.option_a,
+        optionB: r.option_b,
+        optionC: r.option_c,
+        optionD: r.option_d,
+        ...(isStudent ? {} : { correctOption: r.correct_option })
+      }));
+      res.json(mapped);
+    }
+  );
+});
+
+// Create quiz (Admin/Teacher only)
+app.post('/api/quizzes', authenticateToken, (req, res) => {
+  if (req.user.role === 'student') return res.sendStatus(403);
+  const { title, className, subject, durationMinutes, questions } = req.body;
+
+  if (!title || !className || !subject || !questions || !Array.isArray(questions)) {
+    return res.status(400).json({ error: 'Missing required quiz fields or invalid questions array' });
+  }
+
+  db.serialize(() => {
+    db.run(
+      `INSERT INTO quizzes (title, class_name, subject, duration_minutes) VALUES (?, ?, ?, ?)`,
+      [title, className, subject, durationMinutes || 30],
+      function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+        const quizId = this.lastID;
+
+        const stmt = db.prepare(
+          `INSERT INTO quiz_questions (quiz_id, question_text, option_a, option_b, option_c, option_d, correct_option) VALUES (?, ?, ?, ?, ?, ?, ?)`
+        );
+
+        questions.forEach(q => {
+          stmt.run([quizId, q.questionText, q.optionA, q.optionB, q.optionC, q.optionD, q.correctOption]);
+        });
+
+        stmt.finalize((err) => {
+          if (err) return res.status(500).json({ error: err.message });
+          logAction('QUIZ_CREATED', `Quiz "${title}" created for batch ${className}`);
+          res.json({ success: true, quizId, title });
+        });
+      }
+    );
+  });
+});
+
+// Delete quiz (Admin/Teacher only)
+app.delete('/api/quizzes/:id', authenticateToken, (req, res) => {
+  if (req.user.role === 'student') return res.sendStatus(403);
+  const quizId = parseInt(req.params.id);
+
+  db.serialize(() => {
+    db.run(`DELETE FROM quiz_questions WHERE quiz_id = ?`, [quizId], (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+      
+      db.run(`DELETE FROM quizzes WHERE id = ?`, [quizId], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        
+        db.run(`DELETE FROM quiz_attempts WHERE quiz_id = ?`, [quizId], (err) => {
+          logAction('QUIZ_DELETED', `Deleted quiz ID ${quizId}`);
+          res.json({ success: true, message: 'Quiz deleted successfully' });
+        });
+      });
+    });
+  });
+});
+
+// Submit quiz answers (Student only)
+app.post('/api/quizzes/:id/submit', authenticateToken, (req, res) => {
+  const quizId = parseInt(req.params.id);
+  const studentId = req.user.id;
+  const { answers } = req.body;
+
+  if (!answers) return res.status(400).json({ error: 'Missing answers object' });
+
+  db.all(`SELECT id, correct_option FROM quiz_questions WHERE quiz_id = ?`, [quizId], (err, questions) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (questions.length === 0) return res.status(400).json({ error: 'Quiz contains no questions' });
+
+    let score = 0;
+    const totalQuestions = questions.length;
+
+    questions.forEach(q => {
+      const studentAnswer = answers[q.id.toString()];
+      if (studentAnswer === q.correct_option) {
+        score++;
+      }
+    });
+
+    db.run(
+      `INSERT INTO quiz_attempts (quiz_id, student_id, score, total_questions) VALUES (?, ?, ?, ?)`,
+      [quizId, studentId, score, totalQuestions],
+      function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+        
+        logAction('QUIZ_ATTEMPT', `Student ID ${studentId} completed quiz ID ${quizId} with score ${score}/${totalQuestions}`);
+        res.json({ success: true, attemptId: this.lastID, score, totalQuestions });
+      }
+    );
+  });
+});
+
+// Get quiz attempts
+app.get('/api/quizzes-attempts', authenticateToken, (req, res) => {
+  if (req.user.role === 'student') {
+    db.all(
+      `SELECT quiz_attempts.*, quizzes.title, quizzes.subject, quizzes.duration_minutes
+       FROM quiz_attempts 
+       JOIN quizzes ON quiz_attempts.quiz_id = quizzes.id 
+       WHERE quiz_attempts.student_id = ? 
+       ORDER BY quiz_attempts.id DESC`,
+      [req.user.id],
+      (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        
+        const mapped = rows.map(r => ({
+          id: r.id,
+          quizId: r.quiz_id,
+          studentId: r.student_id,
+          score: r.score,
+          totalQuestions: r.total_questions,
+          attemptDate: r.attempt_date,
+          quizTitle: r.title,
+          quizSubject: r.subject,
+          quizDuration: r.duration_minutes
+        }));
+        res.json(mapped);
+      }
+    );
+  } else {
+    db.all(
+      `SELECT quiz_attempts.*, quizzes.title, quizzes.subject, users.name as student_name, users.className as student_class
+       FROM quiz_attempts 
+       JOIN quizzes ON quiz_attempts.quiz_id = quizzes.id 
+       JOIN users ON quiz_attempts.student_id = users.id 
+       ORDER BY quiz_attempts.id DESC`,
+      [],
+      (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        
+        const mapped = rows.map(r => ({
+          id: r.id,
+          quizId: r.quiz_id,
+          studentId: r.student_id,
+          score: r.score,
+          totalQuestions: r.total_questions,
+          attemptDate: r.attempt_date,
+          quizTitle: r.title,
+          quizSubject: r.subject,
+          studentName: r.student_name,
+          studentClass: r.student_class
+        }));
+        res.json(mapped);
+      }
+    );
+  }
+// --- SYLLABUS & LESSON PROGRESS TRACKER ENDPOINTS ---
+
+// Get all syllabus items
+app.get('/api/syllabus', authenticateToken, (req, res) => {
+  if (req.user.role === 'student') {
+    db.get(`SELECT className FROM users WHERE id = ?`, [req.user.id], (err, user) => {
+      if (err || !user) return res.status(500).json({ error: 'Failed to retrieve student batch' });
+      const studentClass = user.className || 'General';
+      db.all(
+        `SELECT * FROM syllabus_tracker WHERE class_name = ? OR class_name = 'All' ORDER BY id ASC`,
+        [studentClass],
+        (err, rows) => {
+          if (err) return res.status(500).json({ error: err.message });
+          res.json(rows);
+        }
+      );
+    });
+  } else {
+    // Admin/Teacher see all syllabus items
+    db.all(`SELECT * FROM syllabus_tracker ORDER BY id DESC`, [], (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(rows);
+    });
+  }
+});
+
+// Create new syllabus topic (Admin/Teacher only)
+app.post('/api/syllabus', authenticateToken, (req, res) => {
+  if (req.user.role === 'student') return res.sendStatus(403);
+  const { className, subject, topicName } = req.body;
+
+  if (!className || !subject || !topicName) {
+    return res.status(400).json({ error: 'className, subject, and topicName are required' });
+  }
+
+  db.run(
+    `INSERT INTO syllabus_tracker (class_name, subject, topic_name) VALUES (?, ?, ?)`,
+    [className, subject, topicName],
+    function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      logAction('SYLLABUS_CREATED', `Topic "${topicName}" added for class ${className}`);
+      res.json({ success: true, id: this.lastID });
+    }
+  );
+});
+
+// Update syllabus topic status (Admin/Teacher only)
+app.put('/api/syllabus/:id', authenticateToken, (req, res) => {
+  if (req.user.role === 'student') return res.sendStatus(403);
+  const topicId = parseInt(req.params.id);
+  const { status } = req.body; // 'Not Started', 'In Progress', 'Completed'
+
+  if (!status) return res.status(400).json({ error: 'Status is required' });
+
+  db.run(
+    `UPDATE syllabus_tracker SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+    [status, topicId],
+    function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      logAction('SYLLABUS_UPDATED', `Syllabus topic ID ${topicId} status updated to ${status}`);
+      res.json({ success: true });
+    }
+  );
+});
+
+// Delete syllabus topic (Admin/Teacher only)
+app.delete('/api/syllabus/:id', authenticateToken, (req, res) => {
+  if (req.user.role === 'student') return res.sendStatus(403);
+  const topicId = parseInt(req.params.id);
+
+  db.run(`DELETE FROM syllabus_tracker WHERE id = ?`, [topicId], function (err) {
+    if (err) return res.status(500).json({ error: err.message });
+    logAction('SYLLABUS_DELETED', `Deleted syllabus topic ID ${topicId}`);
+    res.json({ success: true });
+  });
+});
+
+
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);

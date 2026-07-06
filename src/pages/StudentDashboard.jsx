@@ -3,10 +3,11 @@ import { AppContext } from '../context/AppContext';
 import Sidebar from '../components/Sidebar';
 import { Sun, Moon, IndianRupee, FileText, Download, Calendar, Award, Bell, HelpCircle, Clock } from 'lucide-react';
 import { exportToPDF } from '../utils/exportUtils';
+import { generateStudentReportCard } from '../utils/reportGenerator';
 import FeeReceiptModal from '../components/FeeReceiptModal';
 
 const StudentDashboard = () => {
-  const { loggedInUser, theme, setTheme, fees, assignments, submissions, library, announcements, doubtTickets, addDoubtTicket, students, teachers, classes } = useContext(AppContext);
+  const { loggedInUser, theme, setTheme, fees, assignments, submissions, library, announcements, doubtTickets, addDoubtTicket, students, teachers, classes, attendance, quizAttempts } = useContext(AppContext);
   
   // Receipt modal states
   const [selectedReceiptFee, setSelectedReceiptFee] = useState(null);
@@ -108,16 +109,7 @@ const StudentDashboard = () => {
   const myDoubtTickets = doubtTickets.filter(t => t.studentId === loggedInUser.id);
 
   const handleDownloadReport = () => {
-    const rows = [
-      ['Algebra Midterm', 'June 10, 2026', '45 / 50', 'A'],
-      ['Newtonian Mechanics Exam', 'June 18, 2026', '92 / 100', 'A+'],
-      ['English Literature Quiz', 'June 22, 2026', '80 / 100', 'B']
-    ];
-    myAssignments.forEach(a => {
-      const sub = mySubmissions.find(s => s.assignmentId === a.id);
-      rows.push([a.title, a.dueDate || 'N/A', '—', sub?.grade || 'Submitted']);
-    });
-    exportToPDF(`${loggedInUser.name} - Report Card`, 'Report Card', rows, ['Test / Assignment', 'Date', 'Marks', 'Grade']);
+    generateStudentReportCard(loggedInUser, attendance, quizAttempts, assignments, submissions);
   };
 
   const handleDownloadReceipt = (fee) => {

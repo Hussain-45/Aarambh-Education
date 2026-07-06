@@ -4,9 +4,10 @@ import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 import { UserPlus, Download, Trash2, Edit2, Search, Filter, Phone, User, Calendar, MapPin, Award, Percent } from 'lucide-react';
 import { exportToCSV } from '../utils/exportUtils';
+import { generateStudentReportCard } from '../utils/reportGenerator';
 
 const Students = () => {
-  const { students, classes, addToast, addStudent, removeStudent, editStudent, userRole, loggedInUser } = useContext(AppContext);
+  const { students, classes, addToast, addStudent, removeStudent, editStudent, userRole, loggedInUser, attendance, quizAttempts, assignments, submissions } = useContext(AppContext);
   const [showModal, setShowModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
@@ -330,24 +331,33 @@ const Students = () => {
                   )}
                 </div>
 
-                {userRole === 'admin' && (
-                  <div style={{ marginTop: 'auto', borderTop: '1px solid var(--border-color)', paddingTop: '0.8rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <button 
-                      onClick={() => handleOpenEditModal(student)} 
-                      className="prof-btn prof-btn-secondary" 
-                      style={{ padding: '0.3rem 0.6rem', fontSize: '0.8rem' }}
-                    >
-                      <Edit2 size={12} style={{ marginRight: '4px' }} /> Edit Profile
-                    </button>
-                    <button 
-                      onClick={() => handleDeleteStudent(student.id, student.name)} 
-                      className="prof-btn prof-btn-secondary" 
-                      style={{ padding: '0.3rem 0.6rem', fontSize: '0.8rem', color: 'var(--danger)', borderColor: 'rgba(220, 38, 38, 0.2)' }}
-                    >
-                      <Trash2 size={12} /> Remove
-                    </button>
-                  </div>
-                )}
+                <div style={{ marginTop: 'auto', borderTop: '1px solid var(--border-color)', paddingTop: '0.8rem', display: 'flex', gap: '0.5rem', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <button 
+                    onClick={() => generateStudentReportCard(student, attendance, quizAttempts, assignments, submissions)} 
+                    className="prof-btn" 
+                    style={{ padding: '0.3rem 0.6rem', fontSize: '0.8rem', flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+                  >
+                    <Download size={12} /> Report Card
+                  </button>
+                  {userRole === 'admin' && (
+                    <>
+                      <button 
+                        onClick={() => handleOpenEditModal(student)} 
+                        className="prof-btn prof-btn-secondary" 
+                        style={{ padding: '0.3rem 0.6rem', fontSize: '0.8rem' }}
+                      >
+                        <Edit2 size={12} />
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteStudent(student.id, student.name)} 
+                        className="prof-btn prof-btn-secondary" 
+                        style={{ padding: '0.3rem 0.6rem', fontSize: '0.8rem', color: 'var(--danger)', borderColor: 'rgba(220, 38, 38, 0.2)' }}
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
             ))}
             {filteredStudents.length === 0 && (

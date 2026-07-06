@@ -26,6 +26,9 @@ import Chatbot from './components/Chatbot';
 import TeacherAttendance from './pages/TeacherAttendance';
 import TeacherAssignments from './pages/TeacherAssignments';
 import MyBatches from './pages/MyBatches';
+import Quizzes from './pages/Quizzes';
+import StudyCompanion from './pages/StudyCompanion';
+import SyllabusTracker from './pages/SyllabusTracker';
 
 // Admin Protected Route
 const AdminRoute = ({ children }) => {
@@ -102,6 +105,11 @@ const AppLayout = () => {
         <Route path="/library" element={<AuthRoute allowedRoles={['admin', 'teacher', 'student']}><Library /></AuthRoute>} />
         <Route path="/requests" element={<AuthRoute allowedRoles={['admin']}><Requests /></AuthRoute>} />
         <Route path="/settings" element={<AuthRoute allowedRoles={['admin', 'teacher', 'student']}><Settings /></AuthRoute>} />
+        
+        {/* New Features Routes */}
+        <Route path="/quizzes" element={<AuthRoute allowedRoles={['admin', 'teacher', 'student']}><Quizzes /></AuthRoute>} />
+        <Route path="/study-companion" element={<AuthRoute allowedRoles={['admin', 'teacher', 'student']}><StudyCompanion /></AuthRoute>} />
+        <Route path="/syllabus" element={<AuthRoute allowedRoles={['admin', 'teacher', 'student']}><SyllabusTracker /></AuthRoute>} />
 
         <Route path="*" element={<Navigate to={isAuthenticated ? getDashboardRoute() : "/login"} replace />} />
       </Routes>

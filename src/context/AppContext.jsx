@@ -33,6 +33,9 @@ export const AppProvider = ({ children }) => {
   const [toasts, setToasts] = useState([]);
   const [attendance, setAttendance] = useState([]);
   const [doubtTickets, setDoubtTickets] = useState([]);
+  const [quizzes, setQuizzes] = useState([]);
+  const [quizAttempts, setQuizAttempts] = useState([]);
+  const [syllabus, setSyllabus] = useState([]);
 
   // Initialize DB on first load
   useEffect(() => {
@@ -188,6 +191,27 @@ export const AppProvider = ({ children }) => {
       if (doubtsRes.ok) {
         const doubtsData = await doubtsRes.json();
         setDoubtTickets(doubtsData);
+      }
+
+      // Load quizzes
+      const quizRes = await fetch('http://localhost:5000/api/quizzes', { headers });
+      if (quizRes.ok) {
+        const quizData = await quizRes.json();
+        setQuizzes(quizData);
+      }
+
+      // Load quiz attempts
+      const attemptRes = await fetch('http://localhost:5000/api/quizzes-attempts', { headers });
+      if (attemptRes.ok) {
+        const attemptData = await attemptRes.json();
+        setQuizAttempts(attemptData);
+      }
+
+      // Load syllabus tracker
+      const sylRes = await fetch('http://localhost:5000/api/syllabus', { headers });
+      if (sylRes.ok) {
+        const sylData = await sylRes.json();
+        setSyllabus(sylData);
       }
     } catch (err) {
       console.error('Error fetching data from server', err);
@@ -662,6 +686,245 @@ export const AppProvider = ({ children }) => {
       } else {
         const errData = await response.json();
         addToast(errData.error || 'Failed to record payment', 'danger');
+        return false;
+      }
+    } catch (e) {
+      addToast('Server connection failed', 'danger');
+      return false;
+    }
+  };
+
+  // Submit UPI payment transaction ID
+  const submitUpiPayment = async (feeId, upiTransactionId) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/fees/${feeId}/submit-upi`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify({ upiTransactionId })
+      });
+      if (response.ok) {
+        setFees(prev => prev.map(f => f.id === feeId ? {
+          ...f,
+          paymentMode: 'UPI',
+          upiTransactionId,
+          upiPaymentStatus: 'pending_verification',
+          status: 'Pending Verification'
+        } : f));
+        logActivity('UPI Submitted', `Submitted UPI Transaction ID ${upiTransactionId} for verification`);
+        addToast('UPI Transaction ID submitted successfully!');
+        return true;
+      } else {
+        const errData = await response.json();
+        addToast(errData.error || 'Failed to submit transaction ID', 'danger');
+        return false;
+      }
+    } catch (e) {
+      addToast('Server connection failed', 'danger');
+      return false;
+    }
+  };
+
+  // Verify UPI Payment (Admin only)
+  const verifyUpiPayment = async (feeId, status, notes) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/fees/${feeId}/verify-upi`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify({ status, notes })
+      });
+      if (response.ok) {
+        await fetchDataFromServer();
+        addToast(status === 'verified' ? 'UPI Payment verified successfully!' : 'UPI Payment rejected successfully.');
+        return true;
+      } else {
+        const errData = await response.json();
+        addToast(errData.error || 'Failed to verify payment', 'danger');
+        return false;
+      }
+    } catch (e) {
+      addToast('Server connection failed', 'danger');
+      return false;
+    }
+  };
+
+  // Create a new Quiz (Admin/Teacher only)
+  const createQuiz = async (quizData) => {
+    try {
+      const response = await fetch('http://localhost:5000/api/quizzes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify(quizData)
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setQuizzes(prev => [{
+          id: data.quizId,
+          title: quizData.title,
+          class_name: quizData.className,
+          subject: quizData.subject,
+          duration_minutes: quizData.durationMinutes || 30
+        }, ...prev]);
+        addToast(`Quiz "${quizData.title}" created successfully!`);
+        return true;
+      } else {
+        const errData = await response.json();
+        addToast(errData.error || 'Failed to create quiz', 'danger');
+        return false;
+      }
+    } catch (e) {
+      addToast('Server connection failed', 'danger');
+      return false;
+    }
+  };
+
+  // Submit answers for a Quiz
+  const submitQuizAnswers = async (quizId, answers) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/quizzes/${quizId}/submit`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify({ answers })
+      });
+      if (response.ok) {
+        const data = await response.json();
+        addToast(`Quiz submitted! You scored ${data.score}/${data.totalQuestions}`);
+        
+        const attemptRes = await fetch('http://localhost:5000/api/quizzes-attempts', {
+          headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        if (attemptRes.ok) {
+          const attemptData = await attemptRes.json();
+          setQuizAttempts(attemptData);
+        }
+        return data;
+      } else {
+        const errData = await response.json();
+        addToast(errData.error || 'Failed to submit quiz', 'danger');
+        return null;
+      }
+    } catch (e) {
+      addToast('Server connection failed', 'danger');
+      return null;
+    }
+  };
+
+  // Delete a Quiz
+  const deleteQuiz = async (quizId) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/quizzes/${quizId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        }
+      });
+      if (response.ok) {
+        setQuizzes(prev => prev.filter(q => q.id !== quizId));
+        setQuizAttempts(prev => prev.filter(qa => qa.quizId !== quizId));
+        addToast('Quiz deleted successfully.');
+        return true;
+      } else {
+        const errData = await response.json();
+        addToast(errData.error || 'Failed to delete quiz', 'danger');
+        return false;
+      }
+    } catch (e) {
+      addToast('Server connection failed', 'danger');
+      return false;
+    }
+  };
+
+  // Add a new Syllabus Topic (Admin/Teacher only)
+  const addSyllabusTopic = async (className, subject, topicName) => {
+    try {
+      const response = await fetch('http://localhost:5000/api/syllabus', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify({ className, subject, topicName })
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setSyllabus(prev => [{
+          id: data.id,
+          class_name: className,
+          subject,
+          topic_name: topicName,
+          status: 'Not Started',
+          updated_at: new Date().toISOString()
+        }, ...prev]);
+        addToast(`Topic "${topicName}" added to syllabus tracker!`);
+        return true;
+      } else {
+        const errData = await response.json();
+        addToast(errData.error || 'Failed to add topic', 'danger');
+        return false;
+      }
+    } catch (e) {
+      addToast('Server connection failed', 'danger');
+      return false;
+    }
+  };
+
+  // Update Syllabus Topic Status (Admin/Teacher only)
+  const updateSyllabusTopicStatus = async (topicId, status) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/syllabus/${topicId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify({ status })
+      });
+      if (response.ok) {
+        setSyllabus(prev => prev.map(item => 
+          item.id === topicId 
+            ? { ...item, status, updated_at: new Date().toISOString() } 
+            : item
+        ));
+        addToast(`Syllabus topic status updated to: ${status}`);
+        return true;
+      } else {
+        const errData = await response.json();
+        addToast(errData.error || 'Failed to update topic status', 'danger');
+        return false;
+      }
+    } catch (e) {
+      addToast('Server connection failed', 'danger');
+      return false;
+    }
+  };
+
+  // Delete Syllabus Topic (Admin/Teacher only)
+  const deleteSyllabusTopic = async (topicId) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/syllabus/${topicId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        }
+      });
+      if (response.ok) {
+        setSyllabus(prev => prev.filter(item => item.id !== topicId));
+        addToast('Syllabus topic deleted successfully.');
+        return true;
+      } else {
+        const errData = await response.json();
+        addToast(errData.error || 'Failed to delete syllabus topic', 'danger');
         return false;
       }
     } catch (e) {
@@ -1696,8 +1959,10 @@ export const AppProvider = ({ children }) => {
       theme, setTheme, sidebarCollapsed, setSidebarCollapsed,
       students, teachers, fees, messages, toasts, classes, expenses, attendance,
       assignments, submissions, calendarEvents, library, history, announcements, registrationRequests, doubtTickets,
-      notifications, pendingUploads,
+      notifications, pendingUploads, quizzes, quizAttempts, syllabus,
       sendMessage, recordFeePayment, sendFeeReminders, addToast, addStudent, removeStudent, addBatch, editBatch, removeBatch,
+      submitUpiPayment, verifyUpiPayment, createQuiz, submitQuizAnswers, deleteQuiz,
+      addSyllabusTopic, updateSyllabusTopicStatus, deleteSyllabusTopic,
       addTeacher, removeTeacher, editStudent, editTeacher,
       addAssignment, deleteAssignment, addLibraryMaterial, deleteLibraryMaterial, fetchHistory, updateProfile, addAnnouncement, deleteAnnouncement,
       addExpense, editExpense, removeExpense, markAttendance, triggerMarkAttendance, sendMonthlyAttendanceReport, addDoubtTicket, replyToDoubtTicket, deleteHistoryLog, clearAllHistoryLogs,

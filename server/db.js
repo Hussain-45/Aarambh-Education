@@ -89,6 +89,9 @@ const db = new sqlite3.Database(dbPath, (err) => {
       db.run(`ALTER TABLE fees ADD COLUMN month TEXT`, (err) => {});
       db.run(`ALTER TABLE fees ADD COLUMN payment_mode TEXT DEFAULT 'Cash'`, (err) => {});
       db.run(`ALTER TABLE fees ADD COLUMN payment_date TEXT`, (err) => {});
+      db.run(`ALTER TABLE fees ADD COLUMN upi_transaction_id TEXT`, (err) => {});
+      db.run(`ALTER TABLE fees ADD COLUMN upi_payment_status TEXT`, (err) => {});
+      db.run(`ALTER TABLE fees ADD COLUMN upi_payment_notes TEXT`, (err) => {});
 
       // Attendance Table
       db.run(`CREATE TABLE IF NOT EXISTS attendance (
@@ -219,6 +222,51 @@ const db = new sqlite3.Database(dbPath, (err) => {
         time TEXT,
         type TEXT NOT NULL,
         description TEXT
+      )`);
+
+      // Quizzes Table
+      db.run(`CREATE TABLE IF NOT EXISTS quizzes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        class_name TEXT NOT NULL,
+        subject TEXT NOT NULL,
+        duration_minutes INTEGER DEFAULT 30,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )`);
+
+      // Quiz Questions Table
+      db.run(`CREATE TABLE IF NOT EXISTS quiz_questions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        quiz_id INTEGER NOT NULL,
+        question_text TEXT NOT NULL,
+        option_a TEXT NOT NULL,
+        option_b TEXT NOT NULL,
+        option_c TEXT NOT NULL,
+        option_d TEXT NOT NULL,
+        correct_option TEXT NOT NULL,
+        FOREIGN KEY(quiz_id) REFERENCES quizzes(id) ON DELETE CASCADE
+      )`);
+
+      // Quiz Attempts Table
+      db.run(`CREATE TABLE IF NOT EXISTS quiz_attempts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        quiz_id INTEGER NOT NULL,
+        student_id INTEGER NOT NULL,
+        score INTEGER NOT NULL,
+        total_questions INTEGER NOT NULL,
+        attempt_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(quiz_id) REFERENCES quizzes(id) ON DELETE CASCADE,
+        FOREIGN KEY(student_id) REFERENCES users(id) ON DELETE CASCADE
+      )`);
+
+      // Syllabus Tracker Table
+      db.run(`CREATE TABLE IF NOT EXISTS syllabus_tracker (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        class_name TEXT NOT NULL,
+        subject TEXT NOT NULL,
+        topic_name TEXT NOT NULL,
+        status TEXT DEFAULT 'Not Started',
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )`);
 
       // Seed a default admin if no users exist
