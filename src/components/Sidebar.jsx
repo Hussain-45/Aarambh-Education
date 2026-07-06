@@ -101,6 +101,9 @@ const Sidebar = () => {
             <SidebarItem icon={BookOpen} label="My Assignments" active={path === '/assignments'} onClick={() => navigate('/assignments')} />
             <SidebarItem icon={Trophy} label="Quizzes & Exams" active={path === '/quizzes'} onClick={() => navigate('/quizzes')} />
             <SidebarItem icon={Sparkles} label="AI Study Tutor" active={path === '/study-companion'} onClick={() => navigate('/study-companion')} />
+            <SidebarItem icon={BookOpen} label="AI Flashcards" active={path === '/flashcards'} onClick={() => navigate('/flashcards')} />
+            <SidebarItem icon={Trophy} label="Leaderboard" active={path === '/leaderboard'} onClick={() => navigate('/leaderboard')} />
+            <SidebarItem icon={Clock} label="AI Study Planner" active={path === '/study-planner'} onClick={() => navigate('/study-planner')} />
             <SidebarItem icon={GraduationCap} label="Syllabus Progress" active={path === '/syllabus'} onClick={() => navigate('/syllabus')} />
             <SidebarItem icon={Calendar} label="Events" active={path === '/calendar'} onClick={() => navigate('/calendar')} />
             <SidebarItem icon={BookOpen} label="Study Material" active={path === '/library'} onClick={() => navigate('/library')} />

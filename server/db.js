@@ -269,6 +269,55 @@ const db = new sqlite3.Database(dbPath, (err) => {
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )`);
 
+      // Gamification columns & tables
+      db.run(`ALTER TABLE users ADD COLUMN xp INTEGER DEFAULT 0`, (err) => {
+        // Ignore error if column already exists
+      });
+
+      db.run(`CREATE TABLE IF NOT EXISTS student_badges (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        student_id INTEGER NOT NULL,
+        badge_name TEXT NOT NULL,
+        badge_type TEXT NOT NULL,
+        unlocked_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(student_id) REFERENCES users(id) ON DELETE CASCADE
+      )`);
+
+      // Flashcards tables
+      db.run(`CREATE TABLE IF NOT EXISTS flashcard_decks (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        student_id INTEGER NOT NULL,
+        title TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(student_id) REFERENCES users(id) ON DELETE CASCADE
+      )`);
+
+      db.run(`CREATE TABLE IF NOT EXISTS flashcards (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        deck_id INTEGER NOT NULL,
+        front TEXT NOT NULL,
+        back TEXT NOT NULL,
+        interval INTEGER DEFAULT 1,
+        ease_factor REAL DEFAULT 2.5,
+        repetitions INTEGER DEFAULT 0,
+        next_review_date TEXT,
+        FOREIGN KEY(deck_id) REFERENCES flashcard_decks(id) ON DELETE CASCADE
+      )`);
+
+      // Study Planner table
+      db.run(`CREATE TABLE IF NOT EXISTS study_planner (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        student_id INTEGER NOT NULL,
+        title TEXT NOT NULL,
+        date TEXT NOT NULL,
+        time TEXT,
+        duration_minutes INTEGER DEFAULT 30,
+        subject TEXT,
+        completed INTEGER DEFAULT 0,
+        created_by TEXT DEFAULT 'user',
+        FOREIGN KEY(student_id) REFERENCES users(id) ON DELETE CASCADE
+      )`);
+
       // Seed a default admin if no users exist
       db.get(`SELECT COUNT(*) as count FROM users`, (err, row) => {
         if (!err && row && row.count === 0) {

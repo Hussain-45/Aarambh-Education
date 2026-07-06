@@ -2491,6 +2491,361 @@ Follow these strict rules:
   }
 });
 
+// ============================================================================
+// NEW FEATURES: GAMIFICATION, FLASHCARDS, AND STUDY PLANNER ENDPOINTS
+// ============================================================================
+
+// Reusable Gamification Helpers
+function awardXP(studentId, amount, callback = () => {}) {
+  db.run(
+    `UPDATE users SET xp = IFNULL(xp, 0) + ? WHERE id = ?`,
+    [amount, studentId],
+    (err) => {
+      if (err) console.error('[XP AWARD ERROR]', err.message);
+      
+      // Let's audit log this reward
+      db.run(
+        `INSERT INTO audit_logs (action, details) VALUES (?, ?)`,
+        ['XP_AWARD', `Student ID ${studentId} awarded ${amount} XP.`]
+      );
+      callback();
+    }
+  );
+}
+
+function unlockBadge(studentId, badgeName, badgeType, callback = () => {}) {
+  db.get(
+    `SELECT id FROM student_badges WHERE student_id = ? AND badge_name = ?`,
+    [studentId, badgeName],
+    (err, row) => {
+      if (!err && !row) {
+        db.run(
+          `INSERT INTO student_badges (student_id, badge_name, badge_type) VALUES (?, ?, ?)`,
+          [studentId, badgeName, badgeType],
+          (err) => {
+            if (!err) {
+              console.log(`[BADGE UNLOCKED] Student ID ${studentId} unlocked "${badgeName}"`);
+              // Let's award 100 bonus XP for unlocking a badge!
+              awardXP(studentId, 100, callback);
+            } else {
+              callback();
+            }
+          }
+        );
+      } else {
+        callback();
+      }
+    }
+  );
+}
+
+// 1. Gamification & Leaderboard Routes
+app.get('/api/leaderboard', authenticateToken, (req, res) => {
+  db.all(
+    `SELECT id, name, className, IFNULL(xp, 0) as xp
+     FROM users 
+     WHERE role = 'student' 
+     ORDER BY xp DESC`,
+    [],
+    (err, students) => {
+      if (err) return res.status(500).json({ error: err.message });
+      
+      // Fetch badges for each student
+      db.all(`SELECT student_id, badge_name, badge_type FROM student_badges`, [], (err, badges) => {
+        if (err) return res.status(500).json({ error: err.message });
+        
+        const leaderboard = students.map(s => {
+          const sBadges = badges.filter(b => b.student_id === s.id).map(b => b.badge_name);
+          return {
+            ...s,
+            badges: sBadges
+          };
+        });
+        
+        res.json(leaderboard);
+      });
+    }
+  );
+});
+
+app.get('/api/gamification/profile', authenticateToken, (req, res) => {
+  db.get(`SELECT id, name, className, IFNULL(xp, 0) as xp FROM users WHERE id = ?`, [req.user.id], (err, student) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!student) return res.status(404).json({ error: 'Student not found' });
+    
+    db.all(`SELECT badge_name, badge_type, unlocked_at FROM student_badges WHERE student_id = ?`, [req.user.id], (err, badges) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({
+        xp: student.xp,
+        badges: badges
+      });
+    });
+  });
+});
+
+// 2. AI Flashcard Routes
+app.post('/api/flashcards/generate', authenticateToken, async (req, res) => {
+  const { topic } = req.body;
+  const apiKey = process.env.GEMINI_API_KEY;
+
+  if (!topic) {
+    return res.status(400).json({ error: 'Topic is required' });
+  }
+
+  // Create local offline fallback if no API key
+  if (!apiKey || apiKey === 'YOUR_API_KEY_HERE') {
+    const offlineCards = [
+      { front: `What is the main definition of ${topic}?`, back: `Placeholder study explanation for ${topic}.` },
+      { front: `List 2 key formulas or facts related to ${topic}.`, back: `1. Fact A\n2. Formula/Fact B.` },
+      { front: `State one typical application of ${topic}.`, back: `Used in school homeworks and exam preparation.` }
+    ];
+    
+    db.run(`INSERT INTO flashcard_decks (student_id, title) VALUES (?, ?)`, [req.user.id, topic], function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      const deckId = this.lastID;
+      
+      const insertStmt = db.prepare(`INSERT INTO flashcards (deck_id, front, back, next_review_date) VALUES (?, ?, ?, date('now'))`);
+      offlineCards.forEach(c => insertStmt.run([deckId, c.front, c.back]));
+      insertStmt.finalize();
+      
+      awardXP(req.user.id, 50, () => {
+        res.json({ success: true, message: 'Flashcard deck created offline successfully!', deckId });
+      });
+    });
+    return;
+  }
+
+  try {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+    const promptText = `Generate 5 flashcard Q&A items for the topic "${topic}". Output format must be a valid JSON array of objects, where each object has exactly two fields: "front" (the question or term) and "back" (the answer or explanation). Do not wrap the JSON in Markdown or any other text; output raw JSON only.`;
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ role: 'user', parts: [{ text: promptText }] }]
+      })
+    });
+
+    if (!response.ok) throw new Error('Failed to fetch from Gemini');
+    const data = await response.json();
+    let text = data.candidates[0].content.parts[0].text.trim();
+    
+    // Sanitize response markdown block wrap if any
+    if (text.startsWith('```json')) {
+      text = text.substring(7, text.length - 3).trim();
+    } else if (text.startsWith('```')) {
+      text = text.substring(3, text.length - 3).trim();
+    }
+
+    const cards = JSON.parse(text);
+    if (!Array.isArray(cards)) throw new Error('Response is not a valid array');
+
+    db.run(`INSERT INTO flashcard_decks (student_id, title) VALUES (?, ?)`, [req.user.id, topic], function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      const deckId = this.lastID;
+      
+      const insertStmt = db.prepare(`INSERT INTO flashcards (deck_id, front, back, next_review_date) VALUES (?, ?, ?, date('now'))`);
+      cards.forEach(c => insertStmt.run([deckId, c.front || 'Q', c.back || 'A']));
+      insertStmt.finalize();
+      
+      awardXP(req.user.id, 50, () => {
+        // Unlock badge if they have 3+ decks
+        db.get(`SELECT COUNT(*) as count FROM flashcard_decks WHERE student_id = ?`, [req.user.id], (err, row) => {
+          if (!err && row && row.count >= 3) {
+            unlockBadge(req.user.id, 'Flashcard Scholar', 'academic');
+          }
+        });
+        res.json({ success: true, message: 'Flashcards generated successfully!', deckId });
+      });
+    });
+  } catch (err) {
+    console.error('[AI FLASHCARD ERROR]', err);
+    res.status(500).json({ error: 'Failed to generate flashcards via AI.' });
+  }
+});
+
+app.get('/api/flashcards/decks', authenticateToken, (req, res) => {
+  db.all(
+    `SELECT d.*, COUNT(f.id) as card_count 
+     FROM flashcard_decks d
+     LEFT JOIN flashcards f ON f.deck_id = d.id
+     WHERE d.student_id = ?
+     GROUP BY d.id`,
+    [req.user.id],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(rows);
+    }
+  );
+});
+
+app.get('/api/flashcards/decks/:id', authenticateToken, (req, res) => {
+  db.all(`SELECT * FROM flashcards WHERE deck_id = ?`, [req.params.id], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
+});
+
+app.put('/api/flashcards/:id/review', authenticateToken, (req, res) => {
+  const { rating } = req.body; // 1 (Hard), 3 (Good), 5 (Easy)
+  if (!rating) return res.status(400).json({ error: 'Rating is required' });
+
+  db.get(`SELECT * FROM flashcards WHERE id = ?`, [req.params.id], (err, card) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!card) return res.status(404).json({ error: 'Card not found' });
+
+    let { interval, ease_factor, repetitions } = card;
+    if (rating >= 3) {
+      if (repetitions === 0) interval = 1;
+      else if (repetitions === 1) interval = 4;
+      else interval = Math.round(interval * ease_factor);
+      repetitions += 1;
+    } else {
+      repetitions = 0;
+      interval = 1;
+    }
+
+    ease_factor = ease_factor + (0.1 - (5 - rating) * (0.08 + (5 - rating) * 0.02));
+    if (ease_factor < 1.3) ease_factor = 1.3;
+
+    db.run(
+      `UPDATE flashcards 
+       SET interval = ?, ease_factor = ?, repetitions = ?, next_review_date = date('now', '+' || ? || ' days')
+       WHERE id = ?`,
+      [interval, ease_factor, repetitions, interval, req.params.id],
+      (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        
+        awardXP(req.user.id, 15, () => {
+          unlockBadge(req.user.id, 'Memory Master', 'academic');
+          res.json({ success: true, nextReviewInDays: interval });
+        });
+      }
+    );
+  });
+});
+
+app.delete('/api/flashcards/decks/:id', authenticateToken, (req, res) => {
+  db.run(`DELETE FROM flashcard_decks WHERE id = ? AND student_id = ?`, [req.params.id, req.user.id], (err) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ success: true });
+  });
+});
+
+// 3. AI Study Planner Routes
+app.get('/api/study-planner', authenticateToken, (req, res) => {
+  db.all(`SELECT * FROM study_planner WHERE student_id = ? ORDER BY date ASC, time ASC`, [req.user.id], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
+});
+
+app.post('/api/study-planner', authenticateToken, (req, res) => {
+  const { title, date, time, duration_minutes, subject } = req.body;
+  db.run(
+    `INSERT INTO study_planner (student_id, title, date, time, duration_minutes, subject, completed) VALUES (?, ?, ?, ?, ?, ?, 0)`,
+    [req.user.id, title, date, time, duration_minutes || 30, subject],
+    function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      const eventId = this.lastID;
+      awardXP(req.user.id, 10, () => {
+        res.json({ success: true, eventId });
+      });
+    }
+  );
+});
+
+app.put('/api/study-planner/:id', authenticateToken, (req, res) => {
+  const { completed } = req.body;
+  db.run(
+    `UPDATE study_planner SET completed = ? WHERE id = ? AND student_id = ?`,
+    [completed ? 1 : 0, req.params.id, req.user.id],
+    (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+      
+      const xpReward = completed ? 30 : 0;
+      awardXP(req.user.id, xpReward, () => {
+        if (completed) {
+          db.get(`SELECT COUNT(*) as count FROM study_planner WHERE student_id = ? AND completed = 1`, [req.user.id], (err, row) => {
+            if (!err && row && row.count >= 5) {
+              unlockBadge(req.user.id, 'Organized Learner', 'academic');
+            }
+          });
+        }
+        res.json({ success: true });
+      });
+    }
+  );
+});
+
+app.delete('/api/study-planner/:id', authenticateToken, (req, res) => {
+  db.run(`DELETE FROM study_planner WHERE id = ? AND student_id = ?`, [req.params.id, req.user.id], (err) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ success: true });
+  });
+});
+
+app.post('/api/study-planner/generate-ai', authenticateToken, async (req, res) => {
+  const apiKey = process.env.GEMINI_API_KEY;
+  const today = new Date().toISOString().split('T')[0];
+
+  if (!apiKey || apiKey === 'YOUR_API_KEY_HERE') {
+    // Local fallback planning
+    const offlinePlans = [
+      { title: 'Physics Revision: Mechanics', date: today, time: '16:00', duration_minutes: 45, subject: 'Physics' },
+      { title: 'Mathematics practice questions', date: today, time: '18:00', duration_minutes: 60, subject: 'Mathematics' },
+      { title: 'Biology reading: Chapter 4', date: today, time: '15:00', duration_minutes: 30, subject: 'Biology' }
+    ];
+
+    const stmt = db.prepare(`INSERT INTO study_planner (student_id, title, date, time, duration_minutes, subject, completed, created_by) VALUES (?, ?, ?, ?, ?, ?, 0, 'ai')`);
+    offlinePlans.forEach(p => stmt.run([req.user.id, p.title, p.date, p.time, p.duration_minutes, p.subject]));
+    stmt.finalize();
+
+    awardXP(req.user.id, 50, () => {
+      res.json({ success: true, message: 'AI study schedule generated offline!' });
+    });
+    return;
+  }
+
+  try {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+    const promptText = `Generate a weekly study schedule for a student. Return a JSON array of event objects, each having exactly these fields: "title" (e.g. "Math: Integration Problems"), "date" (YYYY-MM-DD format), "time" (HH:MM format), "duration_minutes" (integer), and "subject". Provide exactly 5 events spread over the next 7 days starting from today (${today}). Output raw JSON array only.`;
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ role: 'user', parts: [{ text: promptText }] }]
+      })
+    });
+
+    if (!response.ok) throw new Error('Failed to generate study planner schedule via Gemini');
+    const data = await response.json();
+    let text = data.candidates[0].content.parts[0].text.trim();
+
+    if (text.startsWith('```json')) {
+      text = text.substring(7, text.length - 3).trim();
+    } else if (text.startsWith('```')) {
+      text = text.substring(3, text.length - 3).trim();
+    }
+
+    const events = JSON.parse(text);
+    if (!Array.isArray(events)) throw new Error('Gemini response is not a valid array');
+
+    const stmt = db.prepare(`INSERT INTO study_planner (student_id, title, date, time, duration_minutes, subject, completed, created_by) VALUES (?, ?, ?, ?, ?, ?, 0, 'ai')`);
+    events.forEach(p => stmt.run([req.user.id, p.title || 'Study Session', p.date || today, p.time || '17:00', p.duration_minutes || 45, p.subject || 'General']));
+    stmt.finalize();
+
+    awardXP(req.user.id, 50, () => {
+      res.json({ success: true, message: 'AI weekly schedule generated successfully!' });
+    });
+  } catch (err) {
+    console.error('[AI PLANNER ERROR]', err);
+    res.status(500).json({ error: 'Failed to generate AI study plan.' });
+  }
+});
+
 // Announcements Endpoints
 app.get('/api/announcements', authenticateToken, (req, res) => {
   if (req.user.role === 'student') {
@@ -2947,7 +3302,16 @@ app.post('/api/quizzes/:id/submit', authenticateToken, (req, res) => {
         if (err) return res.status(500).json({ error: err.message });
         
         logAction('QUIZ_ATTEMPT', `Student ID ${studentId} completed quiz ID ${quizId} with score ${score}/${totalQuestions}`);
-        res.json({ success: true, attemptId: this.lastID, score, totalQuestions });
+        
+        awardXP(studentId, 100, () => {
+          if (score === totalQuestions) {
+            unlockBadge(studentId, 'Perfect Score', 'academic', () => {
+              res.json({ success: true, attemptId: this.lastID, score, totalQuestions });
+            });
+          } else {
+            res.json({ success: true, attemptId: this.lastID, score, totalQuestions });
+          }
+        });
       }
     );
   });
