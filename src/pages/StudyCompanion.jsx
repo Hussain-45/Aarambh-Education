@@ -2,406 +2,287 @@ import React, { useState, useRef, useEffect, useContext } from 'react';
 import { AppContext } from '../context/AppContext';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
-import { Send, Sparkles, GraduationCap, Compass, BookOpen, Clock, Play, Pause, RotateCcw, Sliders, Activity } from 'lucide-react';
+import { Send, Sparkles, GraduationCap, Compass, Play, Pause, RotateCcw, Clock, ArrowRight } from 'lucide-react';
 
-const StudyCompanion = () => {
-  const { authToken } = useContext(AppContext);
-  const [chatHistory, setChatHistory] = useState([
-    {
-      id: 1,
-      sender: 'bot',
-      text: 'Hello! I am your Aarambh AI Study Tutor. Ask me any question about Math, Science, English, or Computer Science! I will explain concepts step-by-step and provide check-for-understanding practice problems. Feel free to use the interactive simulation canvas on the left to visualize concepts!'
-    }
-  ]);
-  const [question, setQuestion] = useState('');
-  const [loading, setLoading] = useState(false);
-  const chatEndRef = useRef(null);
-
-  // Visualization Panel States
-  const [activeTab, setActiveTab] = useState('simulators'); // 'simulators' | 'pomodoro'
-  const [activeSim, setActiveSim] = useState('newton'); // 'newton' | 'induction' | 'plotter'
-
-  // Newton Simulation States
-  const [newtonForce, setNewtonForce] = useState(10); // N
-  const [newtonMass, setNewtonMass] = useState(2); // kg
-  const [newtonRunning, setNewtonRunning] = useState(false);
-  const newtonX = useRef(50);
-  const newtonV = useRef(0);
-  const newtonCanvasRef = useRef(null);
-  const newtonAnimFrame = useRef(null);
-
-  // Induction Simulation States
-  const [magnetX, setMagnetX] = useState(100);
-  const [inducedCurrent, setInducedCurrent] = useState(0);
-  const prevMagnetX = useRef(100);
-  const inductionCanvasRef = useRef(null);
-  const coilX = 220;
-
-  // Plotter States
-  const [plotFormula, setPlotFormula] = useState('x * x / 10'); // default quadratic curve
-  const plotterCanvasRef = useRef(null);
-
-  // Pomodoro States
-  const [pomTime, setPomTime] = useState(25 * 60); // 25 minutes
-  const [pomActive, setPomActive] = useState(false);
-  const [pomMode, setPomMode] = useState('focus'); // 'focus' | 'break'
-  const pomInterval = useRef(null);
-
-  const suggestedPrompts = [
-    'Explain Newton\'s second law with an example.',
-    'What is electromagnetic induction?',
-    'Give me a practice question on integration.',
-    'Balance this equation: H2 + O2 -> H2O',
-    'Explain recursion simply with a code example.',
-    'What is the difference between active and passive voice?'
-  ];
+// ==========================================
+// Inline Newton's Second Law Simulator
+// ==========================================
+const NewtonSimulator = () => {
+  const [force, setForce] = useState(10);
+  const [mass, setMass] = useState(2);
+  const [running, setRunning] = useState(false);
+  const canvasRef = useRef(null);
+  const xRef = useRef(50);
+  const vRef = useRef(0);
+  const animRef = useRef(null);
 
   useEffect(() => {
-    scrollToBottom();
-  }, [chatHistory]);
-
-  const scrollToBottom = () => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  // ----------------------------------------
-  // 1. Newton Simulation Engine (Canvas)
-  // ----------------------------------------
-  useEffect(() => {
-    if (activeSim !== 'newton' || activeTab !== 'simulators') return;
-    const canvas = newtonCanvasRef.current;
+    const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
-    let width = canvas.width;
-    let height = canvas.height;
+    const width = canvas.width;
+    const height = canvas.height;
 
     const draw = () => {
-      // Clear
       ctx.clearRect(0, 0, width, height);
 
-      // Draw grid
+      // Grid
       ctx.strokeStyle = 'rgba(255,255,255,0.03)';
       ctx.lineWidth = 1;
       for (let x = 0; x < width; x += 20) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, height);
-        ctx.stroke();
-      }
-      for (let y = 0; y < height; y += 20) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(width, y);
-        ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke();
       }
 
-      // Draw Floor
+      // Floor
       ctx.strokeStyle = 'var(--border-color)';
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.moveTo(0, height - 40);
-      ctx.lineTo(width, height - 40);
-      ctx.stroke();
+      ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(0, height - 30); ctx.lineTo(width, height - 30); ctx.stroke();
 
-      // Update position if running
-      if (newtonRunning) {
-        const acceleration = newtonForce / newtonMass;
-        // dt = 0.05 seconds per frame
+      if (running) {
+        const acceleration = force / mass;
         const dt = 0.05;
-        newtonV.current += acceleration * dt;
-        newtonX.current += newtonV.current * dt;
+        vRef.current += acceleration * dt;
+        xRef.current += vRef.current * dt;
 
-        // Reset if box goes off screen
-        if (newtonX.current > width - 80) {
-          newtonX.current = 20;
-          newtonV.current = 0;
+        if (xRef.current > width - 70) {
+          xRef.current = 20;
+          vRef.current = 0;
         }
       }
 
-      // Draw Box
-      const boxSize = 50;
-      const boxY = height - 40 - boxSize;
-      const boxX = newtonX.current;
+      // Box
+      const boxSize = 40;
+      const boxY = height - 30 - boxSize;
+      const boxX = xRef.current;
 
-      // Box body
       ctx.fillStyle = 'var(--primary-text)';
       ctx.fillRect(boxX, boxY, boxSize, boxSize);
       ctx.strokeStyle = 'white';
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 1.5;
       ctx.strokeRect(boxX, boxY, boxSize, boxSize);
 
-      // Mass label on box
+      // Mass label
       ctx.fillStyle = 'white';
-      ctx.font = 'bold 12px sans-serif';
+      ctx.font = '10px sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(`${newtonMass} kg`, boxX + boxSize / 2, boxY + boxSize / 2 + 5);
+      ctx.fillText(`${mass}kg`, boxX + boxSize / 2, boxY + boxSize / 2 + 4);
 
-      // Force Vector Arrow (Green)
-      if (newtonForce > 0) {
+      // Force Arrow
+      if (force > 0) {
         ctx.strokeStyle = '#22c55e';
         ctx.fillStyle = '#22c55e';
-        ctx.lineWidth = 3;
-        const arrowStartX = boxX - newtonForce * 3 - 10;
-        const arrowEndX = boxX - 5;
+        ctx.lineWidth = 2;
+        const startX = boxX - force * 2.5 - 5;
+        const endX = boxX - 3;
         const arrowY = boxY + boxSize / 2;
 
-        ctx.beginPath();
-        ctx.moveTo(arrowStartX, arrowY);
-        ctx.lineTo(arrowEndX, arrowY);
-        ctx.stroke();
-
-        // Arrow head
-        ctx.beginPath();
-        ctx.moveTo(arrowEndX, arrowY);
-        ctx.lineTo(arrowEndX - 8, arrowY - 5);
-        ctx.lineTo(arrowEndX - 8, arrowY + 5);
-        ctx.fill();
-
-        // Label F
-        ctx.font = '10px sans-serif';
-        ctx.fillText(`F = ${newtonForce}N`, arrowStartX + (arrowEndX - arrowStartX) / 2, arrowY - 8);
+        ctx.beginPath(); ctx.moveTo(startX, arrowY); ctx.lineTo(endX, arrowY); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(endX, arrowY); ctx.lineTo(endX - 6, arrowY - 4); ctx.lineTo(endX - 6, arrowY + 4); ctx.fill();
       }
 
-      // Acceleration & Velocity Vector (Blue)
-      if (newtonRunning && newtonV.current > 0) {
+      // Velocity Arrow
+      if (running && vRef.current > 0) {
         ctx.strokeStyle = '#3b82f6';
         ctx.fillStyle = '#3b82f6';
-        ctx.lineWidth = 3;
-        const vStartX = boxX + boxSize + 5;
-        const vEndX = vStartX + Math.min(newtonV.current * 4, 80);
-        const vY = boxY + boxSize / 2;
+        ctx.lineWidth = 2;
+        const startX = boxX + boxSize + 3;
+        const endX = startX + Math.min(vRef.current * 3, 60);
+        const arrowY = boxY + boxSize / 2;
 
-        ctx.beginPath();
-        ctx.moveTo(vStartX, vY);
-        ctx.lineTo(vEndX, vY);
-        ctx.stroke();
-
-        ctx.beginPath();
-        ctx.moveTo(vEndX, vY);
-        ctx.lineTo(vEndX - 8, vY - 5);
-        ctx.lineTo(vEndX - 8, vY + 5);
-        ctx.fill();
-
-        ctx.font = '10px sans-serif';
-        ctx.fillText(`v = ${newtonV.current.toFixed(1)} m/s`, vStartX + (vEndX - vStartX) / 2, vY - 8);
+        ctx.beginPath(); ctx.moveTo(startX, arrowY); ctx.lineTo(endX, arrowY); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(endX, arrowY); ctx.lineTo(endX - 6, arrowY - 4); ctx.lineTo(endX - 6, arrowY + 4); ctx.fill();
       }
 
-      newtonAnimFrame.current = requestAnimationFrame(draw);
+      animRef.current = requestAnimationFrame(draw);
     };
 
     draw();
+    return () => cancelAnimationFrame(animRef.current);
+  }, [force, mass, running]);
 
-    return () => {
-      cancelAnimationFrame(newtonAnimFrame.current);
-    };
-  }, [activeSim, activeTab, newtonForce, newtonMass, newtonRunning]);
+  return (
+    <div style={{ marginTop: '1rem', background: 'var(--bg-main)', borderRadius: '12px', padding: '1rem', border: '1px solid var(--border-color)' }}>
+      <div style={{ fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <Sparkles size={14} style={{ color: 'var(--primary-text)' }} /> Newton's 2nd Law Simulation
+      </div>
+      <canvas ref={canvasRef} width={340} height={120} style={{ width: '100%', height: '120px', background: 'rgba(0,0,0,0.15)', borderRadius: '8px', display: 'block' }} />
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '0.8rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+          <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Mass: {mass} kg</span>
+          <input type="range" min="1" max="5" step="0.5" value={mass} onChange={e => setMass(parseFloat(e.target.value))} style={{ accentColor: 'var(--primary-text)' }} />
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+          <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Force: {force} N</span>
+          <input type="range" min="1" max="20" step="1" value={force} onChange={e => setForce(parseInt(e.target.value))} style={{ accentColor: 'var(--primary-text)' }} />
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.8rem' }}>
+        <button onClick={() => setRunning(!running)} className="prof-btn" style={{ flex: 1, padding: '0.4rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+          {running ? <Pause size={12} /> : <Play size={12} />}
+          {running ? 'Pause' : 'Run'}
+        </button>
+        <button onClick={() => { setRunning(false); xRef.current = 50; vRef.current = 0; }} style={{ background: 'transparent', border: '1px solid var(--border-color)', borderRadius: '6px', width: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text-muted)' }}>
+          <RotateCcw size={12} />
+        </button>
+        <div style={{ fontSize: '0.7rem', fontWeight: 600, display: 'flex', alignItems: 'center', marginLeft: 'auto', color: 'var(--text-muted)' }}>
+          a = F/m = <span style={{ color: 'var(--primary-text)', marginLeft: '4px' }}>{(force/mass).toFixed(2)} m/s²</span>
+        </div>
+      </div>
+    </div>
+  );
+};
 
-  // ----------------------------------------
-  // 2. Induction Simulation Engine
-  // ----------------------------------------
+// ==========================================
+// Inline Faraday's Induction Simulator
+// ==========================================
+const InductionSimulator = () => {
+  const [magnetX, setMagnetX] = useState(60);
+  const [inducedCurrent, setInducedCurrent] = useState(0);
+  const prevX = useRef(magnetX);
+  const canvasRef = useRef(null);
+  const coilX = 220;
+
   useEffect(() => {
-    if (activeSim !== 'induction' || activeTab !== 'simulators') return;
-    const canvas = inductionCanvasRef.current;
+    const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
-    let width = canvas.width;
-    let height = canvas.height;
-
-    // Drawing coil & magnet
-    const renderInduction = () => {
-      ctx.clearRect(0, 0, width, height);
-
-      // Grid background
-      ctx.strokeStyle = 'rgba(255,255,255,0.03)';
-      ctx.lineWidth = 1;
-      for (let x = 0; x < width; x += 20) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, height);
-        ctx.stroke();
-      }
-
-      // Draw Wire Coil (loops of orange circles)
-      ctx.strokeStyle = '#f97316';
-      ctx.lineWidth = 4;
-      const centerY = height / 2;
-      for (let i = 0; i < 5; i++) {
-        ctx.beginPath();
-        ctx.ellipse(coilX + i * 12, centerY, 15, 35, 0, 0, 2 * Math.PI);
-        ctx.stroke();
-      }
-
-      // Coil label
-      ctx.fillStyle = '#f97316';
-      ctx.font = 'bold 12px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText("Conductive Coil", coilX + 24, centerY - 45);
-
-      // Galvanometer Deflection Dial
-      const galvoX = width / 2;
-      const galvoY = height - 55;
-      ctx.strokeStyle = 'var(--border-color)';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.arc(galvoX, galvoY, 30, Math.PI, 2 * Math.PI);
-      ctx.stroke();
-
-      // Needle deflection based on induced current rate
-      const maxDeflection = Math.PI / 4; // 45 degrees
-      const angle = -Math.PI / 2 + Math.min(Math.max(inducedCurrent * 0.15, -maxDeflection), maxDeflection);
-      const needleLength = 25;
-      
-      ctx.strokeStyle = '#ef4444';
-      ctx.lineWidth = 2.5;
-      ctx.beginPath();
-      ctx.moveTo(galvoX, galvoY);
-      ctx.lineTo(galvoX + Math.cos(angle) * needleLength, galvoY + Math.sin(angle) * needleLength);
-      ctx.stroke();
-
-      ctx.fillStyle = 'var(--text-main)';
-      ctx.font = '10px sans-serif';
-      ctx.fillText("G (Galvanometer)", galvoX, galvoY + 15);
-
-      // Draw Bar Magnet (red N, blue S)
-      const magWidth = 90;
-      const magHeight = 35;
-      const magY = centerY - magHeight / 2;
-
-      // North Pole (Red)
-      ctx.fillStyle = '#ef4444';
-      ctx.fillRect(magnetX, magY, magWidth / 2, magHeight);
-      ctx.fillStyle = 'white';
-      ctx.font = 'bold 14px sans-serif';
-      ctx.fillText("N", magnetX + magWidth / 4, magY + 22);
-
-      // South Pole (Blue)
-      ctx.fillStyle = '#3b82f6';
-      ctx.fillRect(magnetX + magWidth / 2, magY, magWidth / 2, magHeight);
-      ctx.fillStyle = 'white';
-      ctx.fillText("S", magnetX + (3 * magWidth) / 4, magY + 22);
-
-      // Magnet border
-      ctx.strokeStyle = 'white';
-      ctx.lineWidth = 1.5;
-      ctx.strokeRect(magnetX, magY, magWidth, magHeight);
-
-      // Draw LED Bulb at the top
-      const bulbX = coilX + 24;
-      const bulbY = 40;
-      ctx.beginPath();
-      ctx.arc(bulbX, bulbY, 15, 0, 2 * Math.PI);
-      
-      // Bulb brightness color based on current amplitude
-      const brightness = Math.min(Math.abs(inducedCurrent) * 15, 255);
-      ctx.fillStyle = brightness > 5 ? `rgba(234, 179, 8, ${brightness / 255})` : 'rgba(255,255,255,0.05)';
-      ctx.fill();
-      
-      ctx.strokeStyle = brightness > 5 ? '#eab308' : 'var(--border-color)';
-      ctx.lineWidth = 2;
-      ctx.stroke();
-
-      ctx.fillStyle = 'var(--text-main)';
-      ctx.font = '10px sans-serif';
-      ctx.fillText(brightness > 5 ? "Induced EMF!" : "No Movement = No EMF", bulbX, bulbY - 20);
-
-      // Magnetic field lines (faint lines radiating from North pole)
-      ctx.strokeStyle = 'rgba(239, 68, 68, 0.15)';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.arc(magnetX, centerY, 50, -Math.PI/3, Math.PI/3);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.arc(magnetX, centerY, 80, -Math.PI/4, Math.PI/4);
-      ctx.stroke();
-    };
-
-    renderInduction();
-  }, [activeSim, activeTab, magnetX, inducedCurrent]);
-
-  const handleMagnetDrag = (e) => {
-    if (activeSim !== 'induction') return;
-    const canvas = inductionCanvasRef.current;
-    if (!canvas) return;
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left - 45; // center offset
-    const clampedX = Math.min(Math.max(x, 10), canvas.width - 100);
-
-    // Speed of drag = dx / dt. Induced EMF is proportional to change in position (Faraday's Law)
-    const dx = clampedX - prevMagnetX.current;
-    
-    setMagnetX(clampedX);
-    setInducedCurrent(dx * 4); // Deflect needle based on speed
-    prevMagnetX.current = clampedX;
-
-    // Decay the deflection back to 0
-    setTimeout(() => {
-      setInducedCurrent(0);
-    }, 150);
-  };
-
-  // ----------------------------------------
-  // 3. Math Function Plotter Engine
-  // ----------------------------------------
-  useEffect(() => {
-    if (activeSim !== 'plotter' || activeTab !== 'simulators') return;
-    const canvas = plotterCanvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    let width = canvas.width;
-    let height = canvas.height;
+    const width = canvas.width;
+    const height = canvas.height;
 
     ctx.clearRect(0, 0, width, height);
 
-    // Draw coordinate axes
+    // Coil
+    ctx.strokeStyle = '#f97316';
+    ctx.lineWidth = 3;
+    const centerY = height / 2;
+    for (let i = 0; i < 5; i++) {
+      ctx.beginPath();
+      ctx.ellipse(coilX + i * 10, centerY, 12, 28, 0, 0, 2 * Math.PI);
+      ctx.stroke();
+    }
+
+    // Dial
+    const dialX = width / 2;
+    const dialY = height - 35;
+    ctx.strokeStyle = 'var(--border-color)';
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(dialX, dialY, 20, Math.PI, 2 * Math.PI); ctx.stroke();
+
+    // Deflecting Needle
+    const maxDeflection = Math.PI / 4;
+    const angle = -Math.PI / 2 + Math.min(Math.max(inducedCurrent * 0.2, -maxDeflection), maxDeflection);
+    ctx.strokeStyle = '#ef4444';
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(dialX, dialY); ctx.lineTo(dialX + Math.cos(angle) * 16, dialY + Math.sin(angle) * 16); ctx.stroke();
+
+    // Magnet
+    const magW = 70;
+    const magH = 26;
+    const magY = centerY - magH / 2;
+
+    ctx.fillStyle = '#ef4444';
+    ctx.fillRect(magnetX, magY, magW / 2, magH);
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 10px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText("N", magnetX + magW / 4, magY + 16);
+
+    ctx.fillStyle = '#3b82f6';
+    ctx.fillRect(magnetX + magW / 2, magY, magW / 2, magH);
+    ctx.fillStyle = 'white';
+    ctx.fillText("S", magnetX + (3 * magW) / 4, magY + 16);
+
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(magnetX, magY, magW, magH);
+
+    // Bulb
+    const bulbX = coilX + 20;
+    const bulbY = 25;
+    ctx.beginPath(); ctx.arc(bulbX, bulbY, 10, 0, 2 * Math.PI);
+    const brightness = Math.min(Math.abs(inducedCurrent) * 12, 255);
+    ctx.fillStyle = brightness > 5 ? `rgba(234, 179, 8, ${brightness / 255})` : 'rgba(255,255,255,0.05)';
+    ctx.fill();
+    ctx.strokeStyle = brightness > 5 ? '#eab308' : 'var(--border-color)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+  }, [magnetX, inducedCurrent]);
+
+  const handleDrag = (e) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left - 35;
+    const clampedX = Math.min(Math.max(x, 10), canvas.width - 80);
+
+    const dx = clampedX - prevX.current;
+    setMagnetX(clampedX);
+    setInducedCurrent(dx * 3.5);
+    prevX.current = clampedX;
+
+    setTimeout(() => setInducedCurrent(0), 150);
+  };
+
+  return (
+    <div style={{ marginTop: '1rem', background: 'var(--bg-main)', borderRadius: '12px', padding: '1rem', border: '1px solid var(--border-color)' }}>
+      <div style={{ fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <Sparkles size={14} style={{ color: 'var(--primary-text)' }} /> Faraday's Induction Simulation
+      </div>
+      <canvas ref={canvasRef} width={340} height={120} onMouseMove={handleDrag} style={{ width: '100%', height: '120px', background: 'rgba(0,0,0,0.15)', borderRadius: '8px', display: 'block', cursor: 'ew-resize' }} />
+      <div style={{ textAlign: 'center', fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+        💡 Drag your mouse/finger horizontally inside the canvas to move the magnet!
+      </div>
+    </div>
+  );
+};
+
+// ==========================================
+// Inline Function Plotter
+// ==========================================
+const PlotterSimulator = () => {
+  const [formula, setFormula] = useState('Math.sin(x/10) * 30');
+  const canvasRef = useRef(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+
+    ctx.clearRect(0, 0, width, height);
+
     const centerX = width / 2;
     const centerY = height / 2;
 
-    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+    // Grid
+    ctx.strokeStyle = 'rgba(255,255,255,0.03)';
     ctx.lineWidth = 1;
-    // vertical grid lines
-    for (let x = 0; x < width; x += 30) {
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, height);
-      ctx.stroke();
+    for (let x = 0; x < width; x += 25) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke();
     }
-    // horizontal grid lines
-    for (let y = 0; y < height; y += 30) {
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(width, y);
-      ctx.stroke();
+    for (let y = 0; y < height; y += 25) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke();
     }
 
-    // Main Axes
-    ctx.strokeStyle = 'var(--text-muted)';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(0, centerY);
-    ctx.lineTo(width, centerY);
-    ctx.stroke();
+    // Axes
+    ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(0, centerY); ctx.lineTo(width, centerY); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(centerX, 0); ctx.lineTo(centerX, height); ctx.stroke();
 
-    ctx.beginPath();
-    ctx.moveTo(centerX, 0);
-    ctx.lineTo(centerX, height);
-    ctx.stroke();
-
-    // Plot User Function
+    // Plot
     ctx.strokeStyle = 'var(--primary-text)';
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 2.5;
     ctx.beginPath();
 
     let first = true;
     for (let screenX = 0; screenX < width; screenX++) {
-      // Map screenX coordinate to graph x value (-centerX to centerX)
       const graphX = screenX - centerX;
-      
       try {
-        // Use Function constructor instead of eval to prevent warnings and security issues
-        const fn = new Function('x', 'return ' + plotFormula);
+        const fn = new Function('x', 'return ' + formula);
         const graphY = fn(graphX);
-        
-        // Map graphY value to screen coordinate
         const screenY = centerY - graphY;
 
         if (screenY >= 0 && screenY <= height) {
@@ -412,56 +293,73 @@ const StudyCompanion = () => {
             ctx.lineTo(screenX, screenY);
           }
         }
-      } catch (err) {
-        // Safe fail-silent if user formula syntax is partially typed
-      }
+      } catch (e) {}
     }
     ctx.stroke();
-  }, [activeSim, activeTab, plotFormula]);
+  }, [formula]);
 
-  // ----------------------------------------
-  // 4. Pomodoro Clock Logic
-  // ----------------------------------------
-  useEffect(() => {
-    if (pomActive) {
-      pomInterval.current = setInterval(() => {
-        setPomTime(prev => {
-          if (prev <= 1) {
-            clearInterval(pomInterval.current);
-            setPomActive(false);
-            // Toggle focus / break mode
-            if (pomMode === 'focus') {
-              setPomMode('break');
-              setPomTime(5 * 60); // 5 min break
-            } else {
-              setPomMode('focus');
-              setPomTime(25 * 60); // 25 min focus
-            }
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    } else {
-      clearInterval(pomInterval.current);
+  return (
+    <div style={{ marginTop: '1rem', background: 'var(--bg-main)', borderRadius: '12px', padding: '1rem', border: '1px solid var(--border-color)' }}>
+      <div style={{ fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <Sparkles size={14} style={{ color: 'var(--primary-text)' }} /> Math Function Plotter
+      </div>
+      <canvas ref={canvasRef} width={340} height={120} style={{ width: '100%', height: '120px', background: 'rgba(0,0,0,0.15)', borderRadius: '8px', display: 'block' }} />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', marginTop: '0.5rem' }}>
+        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Formula y = f(x)</span>
+        <input type="text" value={formula} onChange={e => setFormula(e.target.value)} className="prof-input" style={{ fontSize: '0.75rem', padding: '0.35rem' }} />
+      </div>
+    </div>
+  );
+};
+
+// ==========================================
+// Main Gemini Chatbot Workspace Component
+// ==========================================
+const StudyCompanion = () => {
+  const { authToken, loggedInUser } = useContext(AppContext);
+  const [chatHistory, setChatHistory] = useState([
+    {
+      id: 1,
+      sender: 'bot',
+      text: 'Hello! I am your Aarambh AI Study Tutor. Ask me any question about Math, Science, English, or Computer Science! I will explain concepts step-by-step and provide check-for-understanding practice problems. Feel free to ask for visual simulations or graph plotting!'
     }
-    return () => clearInterval(pomInterval.current);
-  }, [pomActive, pomMode]);
+  ]);
+  const [question, setQuestion] = useState('');
+  const [loading, setLoading] = useState(false);
+  const chatEndRef = useRef(null);
 
-  const formatTime = (secs) => {
-    const mins = Math.floor(secs / 60);
-    const remainder = secs % 60;
-    return `${mins.toString().padStart(2, '0')}:${remainder.toString().padStart(2, '0')}`;
+  // Suggested Prompts (Gemini Card Style)
+  const suggestedCards = [
+    {
+      title: 'Newton\'s 2nd Law',
+      desc: 'Visualize acceleration with a force and mass simulator.',
+      prompt: 'Explain Newton\'s second law with an interactive block simulation.'
+    },
+    {
+      title: 'Electromagnetic Induction',
+      desc: 'Drag magnets to induce electric current in a coil.',
+      prompt: 'Show me how moving magnets generate electricity in a coil.'
+    },
+    {
+      title: 'Math Graph Plotter',
+      desc: 'Render mathematical functions like y = sin(x) on a grid.',
+      prompt: 'Plot a mathematical function like y = sin(x) on a graph.'
+    },
+    {
+      title: 'Algebra Help',
+      desc: 'Learn about simple and compound interest step-by-step.',
+      prompt: 'Explain how simple and compound interest are calculated with formulas.'
+    }
+  ];
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [chatHistory, loading]);
+
+  const scrollToBottom = () => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const handleResetPom = () => {
-    setPomActive(false);
-    setPomTime(pomMode === 'focus' ? 25 * 60 : 5 * 60);
-  };
-
-  // ----------------------------------------
-  // 5. Send Question to Backend AI endpoint
-  // ----------------------------------------
   const handleAsk = async (presetPrompt = null) => {
     const activeQuestion = presetPrompt || question;
     if (!activeQuestion.trim()) return;
@@ -483,13 +381,13 @@ const StudyCompanion = () => {
         },
         body: JSON.stringify({
           question: activeQuestion,
-          history: chatHistory.slice(1) // send context history to backend
+          history: chatHistory.slice(1)
         })
       });
 
       if (response.ok) {
         const data = await response.json();
-        setChatHistory(prev => [...prev, { id: Date.now() + 1, sender: 'bot', text: data.text }]);
+        setChatHistory(prev => [...prev, { id: Date.now() + 1, sender: 'bot', text: data.text, promptContext: activeQuestion }]);
       } else {
         const errData = await response.json();
         setChatHistory(prev => [...prev, { 
@@ -510,16 +408,14 @@ const StudyCompanion = () => {
   };
 
   // ----------------------------------------
-  // 6. Formatting Text Parser (No markdown asterisks)
+  // LaTeX & Markdown Rich Text Parser
   // ----------------------------------------
   const renderFormattedMessage = (text) => {
     if (!text) return null;
-    
-    // Split text by $$ to separate block equations from normal text blocks
     const blocks = text.split('$$');
     
     return blocks.map((block, blockIdx) => {
-      // If block index is odd, it's a block equation
+      // Block equations
       if (blockIdx % 2 === 1) {
         const formula = block.trim();
         if (window.katex) {
@@ -539,11 +435,9 @@ const StudyCompanion = () => {
         return <div key={`eq-block-fallback-${blockIdx}`} style={{ textAlign: 'center', fontFamily: 'monospace', margin: '0.8rem 0' }}>{formula}</div>;
       }
       
-      // Even block index: normal text lines that can contain inline math ($...$)
       const lines = block.split('\n');
       
       return lines.map((line, lineIdx) => {
-        // Headers
         if (line.startsWith('### ')) {
           return <h3 key={`h3-${lineIdx}`} style={{ fontSize: '1rem', fontWeight: 700, marginTop: '0.8rem', marginBottom: '0.4rem', color: 'var(--text-main)' }}>{line.replace('### ', '')}</h3>;
         }
@@ -551,7 +445,6 @@ const StudyCompanion = () => {
           return <h2 key={`h2-${lineIdx}`} style={{ fontSize: '1.15rem', fontWeight: 700, marginTop: '1rem', marginBottom: '0.5rem', color: 'var(--text-main)' }}>{line.replace('## ', '')}</h2>;
         }
 
-        // Bullet points
         let isBullet = false;
         let cleanLine = line;
         if (line.trim().startsWith('* ') || line.trim().startsWith('- ')) {
@@ -559,7 +452,6 @@ const StudyCompanion = () => {
           cleanLine = line.trim().substring(2);
         }
 
-        // Parse bold, italic, code, and inline LaTeX ($...$)
         const parts = [];
         const inlineRegex = /(\*\*([^*`$]+)\*\*)|(\*([^*`$]+)\*)|(`([^`]+)`)|(\$([^\$]+)\$)/g;
         let match;
@@ -571,13 +463,10 @@ const StudyCompanion = () => {
           }
 
           if (match[1]) {
-            // Bold
             parts.push(<strong key={`b-${match.index}`} style={{ fontWeight: 700, color: 'var(--text-main)' }}>{match[2]}</strong>);
           } else if (match[3]) {
-            // Italic
             parts.push(<em key={`i-${match.index}`} style={{ fontStyle: 'italic' }}>{match[4]}</em>);
           } else if (match[5]) {
-            // Inline code
             parts.push(
               <code 
                 key={`c-${match.index}`} 
@@ -594,7 +483,6 @@ const StudyCompanion = () => {
               </code>
             );
           } else if (match[7]) {
-            // Inline equation
             const formula = match[8];
             if (window.katex) {
               try {
@@ -633,376 +521,259 @@ const StudyCompanion = () => {
     });
   };
 
+  // ----------------------------------------
+  // Helper to detect if a simulator is needed
+  // ----------------------------------------
+  const renderInlineSimulator = (msg) => {
+    if (msg.sender !== 'bot') return null;
+    const textToCheck = (msg.text + ' ' + (msg.promptContext || '')).toLowerCase();
+
+    if (textToCheck.includes('newton') && (textToCheck.includes('second') || textToCheck.includes('simulation') || textToCheck.includes('force'))) {
+      return <NewtonSimulator />;
+    }
+    if (textToCheck.includes('induction') || textToCheck.includes('faraday') || textToCheck.includes('coil') || textToCheck.includes('magnet')) {
+      return <InductionSimulator />;
+    }
+    if (textToCheck.includes('plotter') || textToCheck.includes('graph') || textToCheck.includes('plot') || textToCheck.includes('y =')) {
+      return <PlotterSimulator />;
+    }
+    return null;
+  };
+
   return (
     <>
       <Sidebar />
-      <main className="main-content" style={{ padding: '2rem', background: 'var(--bg-main)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <main className="main-content" style={{ padding: '2rem 1.5rem', background: 'var(--bg-main)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
         <Header />
 
-        {/* Dashboard Header */}
-        <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', marginBottom: '1.5rem' }}>
+        {/* Gemini Centralized Chat Layout */}
+        <div style={{ 
+          flex: 1, 
+          maxWidth: '820px', 
+          width: '100%', 
+          margin: '0 auto', 
+          display: 'flex', 
+          flexDirection: 'column', 
+          justifyContent: 'space-between',
+          position: 'relative'
+        }}>
+
+          {/* Chat area */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '80px' }}>
+            
+            {/* Welcome Screen (Show only if conversation has not started) */}
+            {chatHistory.length <= 1 ? (
+              <div style={{ 
+                display: 'flex', 
+                flexDirection: 'column', 
+                justifyContent: 'center', 
+                padding: '4rem 1rem 2rem 1rem',
+                minHeight: '50vh'
+              }}>
+                <h1 style={{ 
+                  fontSize: '3rem', 
+                  fontWeight: 700, 
+                  margin: 0, 
+                  background: 'linear-gradient(75deg, #7c62f3, #c084fc, #3b82f6)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  lineHeight: '1.2'
+                }}>
+                  Hello, {loggedInUser?.name || 'Student'}.
+                </h1>
+                <h2 style={{ 
+                  fontSize: '2.5rem', 
+                  fontWeight: 600, 
+                  color: 'var(--text-muted)', 
+                  margin: '0.2rem 0 2rem 0',
+                  lineHeight: '1.2'
+                }}>
+                  How can I help you today?
+                </h2>
+
+                {/* Gemini Prompt Grid */}
+                <div style={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', 
+                  gap: '1rem',
+                  marginTop: '1.5rem'
+                }}>
+                  {suggestedCards.map((card, idx) => (
+                    <div 
+                      key={idx}
+                      onClick={() => handleAsk(card.prompt)}
+                      className="prof-card"
+                      style={{ 
+                        padding: '1.25rem', 
+                        borderRadius: '16px', 
+                        cursor: 'pointer', 
+                        transition: 'all 0.25s ease',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
+                        minHeight: '130px',
+                        border: '1px solid var(--border-color)',
+                        background: 'rgba(255, 255, 255, 0.01)'
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.transform = 'translateY(-4px)';
+                        e.currentTarget.style.borderColor = 'var(--primary-text)';
+                        e.currentTarget.style.background = 'rgba(124, 98, 243, 0.03)';
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.borderColor = 'var(--border-color)';
+                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.01)';
+                      }}
+                    >
+                      <div>
+                        <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '0.4rem' }}>
+                          {card.title}
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: '1.4' }}>
+                          {card.desc}
+                        </div>
+                      </div>
+                      <div style={{ 
+                        alignSelf: 'flex-end', 
+                        width: '28px', height: '28px', borderRadius: '50%',
+                        background: 'rgba(255,255,255,0.04)', display: 'flex', 
+                        alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)'
+                      }}>
+                        <ArrowRight size={14} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              // Conversation Message List
+              <div style={{ 
+                display: 'flex', 
+                flexDirection: 'column', 
+                gap: '2.5rem', 
+                padding: '1.5rem 0.5rem',
+                minHeight: '400px'
+              }}>
+                {chatHistory.map(msg => (
+                  <div key={msg.id} style={{ 
+                    display: 'flex', 
+                    gap: '1.25rem',
+                    alignItems: 'flex-start',
+                    maxWidth: '100%',
+                    justifyContent: msg.sender === 'user' ? 'flex-end' : 'flex-start'
+                  }}>
+                    {/* Bot Avatar */}
+                    {msg.sender === 'bot' && (
+                      <div style={{ 
+                        width: '32px', height: '32px', borderRadius: '50%', 
+                        background: 'linear-gradient(135deg, #7c62f3, #3b82f6)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        boxShadow: '0 2px 10px rgba(124, 98, 243, 0.3)',
+                        flexShrink: 0
+                      }}>
+                        <Sparkles size={16} color="white" />
+                      </div>
+                    )}
+
+                    {/* Message Bubble */}
+                    <div style={{ 
+                      flex: msg.sender === 'user' ? 'none' : 1,
+                      background: msg.sender === 'user' ? 'var(--secondary)' : 'transparent',
+                      color: 'var(--text-main)',
+                      padding: msg.sender === 'user' ? '0.75rem 1.25rem' : '0',
+                      borderRadius: '20px',
+                      maxWidth: msg.sender === 'user' ? '70%' : '100%',
+                      fontSize: '0.95rem',
+                      lineHeight: '1.6',
+                      border: msg.sender === 'user' ? '1px solid var(--border-color)' : 'none',
+                      boxShadow: msg.sender === 'user' ? 'var(--shadow-sm)' : 'none'
+                    }}>
+                      {/* Formatted Text */}
+                      <div>
+                        {msg.sender === 'bot' ? renderFormattedMessage(msg.text) : msg.text}
+                      </div>
+
+                      {/* Condition-based Inline Visualization */}
+                      {renderInlineSimulator(msg)}
+                    </div>
+                  </div>
+                ))}
+
+                {/* Loading indicator */}
+                {loading && (
+                  <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'flex-start' }}>
+                    <div style={{ 
+                      width: '32px', height: '32px', borderRadius: '50%', 
+                      background: 'linear-gradient(135deg, #7c62f3, #3b82f6)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      boxShadow: '0 2px 10px rgba(124, 98, 243, 0.3)'
+                    }}>
+                      <Sparkles size={16} color="white" />
+                    </div>
+                    <div style={{ display: 'flex', gap: '6px', padding: '0.8rem 0' }}>
+                      <div style={{ width: '8px', height: '8px', background: 'var(--text-muted)', borderRadius: '50%', animation: 'bounce 1.4s infinite ease-in-out both' }} />
+                      <div style={{ width: '8px', height: '8px', background: 'var(--text-muted)', borderRadius: '50%', animation: 'bounce 1.4s infinite ease-in-out both 0.2s' }} />
+                      <div style={{ width: '8px', height: '8px', background: 'var(--text-muted)', borderRadius: '50%', animation: 'bounce 1.4s infinite ease-in-out both 0.4s' }} />
+                    </div>
+                  </div>
+                )}
+                <div ref={chatEndRef} />
+              </div>
+            )}
+          </div>
+
+          {/* Floating Gemini Input Bar */}
           <div style={{ 
-            width: '45px', height: '45px', borderRadius: '12px', background: 'var(--primary-text)', color: 'white',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--shadow-md)'
+            position: 'fixed', 
+            bottom: '1.5rem', 
+            left: 'calc(var(--sidebar-width, 240px) + (100% - var(--sidebar-width, 240px) - 820px)/2)',
+            right: 'calc((100% - var(--sidebar-width, 240px) - 820px)/2)',
+            maxWidth: '820px',
+            width: 'calc(100% - var(--sidebar-width, 240px) - 3rem)',
+            background: 'var(--secondary)',
+            border: '1px solid var(--border-color)',
+            borderRadius: '32px',
+            padding: '0.4rem 0.5rem 0.4rem 1.5rem',
+            display: 'flex',
+            alignItems: 'center',
+            boxShadow: '0 8px 30px rgba(0, 0, 0, 0.15)',
+            zIndex: 10
           }}>
-            <GraduationCap size={24} />
-          </div>
-          <div>
-            <h1 style={{ fontSize: '1.8rem', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>AI Study Tutor</h1>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.2rem' }}>
-              Your interactive workspace featuring live simulations, study tools, and academic assistance.
-            </p>
-          </div>
-        </div>
-
-        {/* Main Split Layout */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.8fr', gap: '2rem', flex: 1, alignItems: 'stretch' }}>
-          
-          {/* Left Column: Interactive Simulation & Study Tools */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            
-            {/* Tabs Selector Card */}
-            <div className="prof-card" style={{ padding: '0.5rem', display: 'flex', gap: '0.5rem', borderRadius: '14px' }}>
-              <button
-                onClick={() => setActiveTab('simulators')}
-                style={{
-                  flex: 1, padding: '0.75rem', borderRadius: '10px', border: 'none', cursor: 'pointer',
-                  background: activeTab === 'simulators' ? 'var(--primary-text)' : 'transparent',
-                  color: activeTab === 'simulators' ? 'white' : 'var(--text-muted)',
-                  fontWeight: 700, fontSize: '0.85rem', transition: 'all 0.2s',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px'
-                }}
-              >
-                <Activity size={16} /> Concept Simulators
-              </button>
-              <button
-                onClick={() => setActiveTab('pomodoro')}
-                style={{
-                  flex: 1, padding: '0.75rem', borderRadius: '10px', border: 'none', cursor: 'pointer',
-                  background: activeTab === 'pomodoro' ? 'var(--primary-text)' : 'transparent',
-                  color: activeTab === 'pomodoro' ? 'white' : 'var(--text-muted)',
-                  fontWeight: 700, fontSize: '0.85rem', transition: 'all 0.2s',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px'
-                }}
-              >
-                <Clock size={16} /> Focus Timer
-              </button>
-            </div>
-
-            {/* Tab Contents: Simulators */}
-            {activeTab === 'simulators' && (
-              <div className="prof-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1 }}>
-                
-                {/* Simulator Inner Tab Buttons */}
-                <div style={{ display: 'flex', gap: '0.4rem', borderBottom: '1px solid var(--border-color)', pb: '0.75rem', marginBottom: '0.5rem' }}>
-                  <button
-                    onClick={() => setActiveSim('newton')}
-                    style={{
-                      padding: '0.5rem 0.8rem', border: 'none', background: 'transparent', cursor: 'pointer',
-                      color: activeSim === 'newton' ? 'var(--primary-text)' : 'var(--text-muted)',
-                      borderBottom: activeSim === 'newton' ? '2px solid var(--primary-text)' : 'none',
-                      fontWeight: 700, fontSize: '0.75rem'
-                    }}
-                  >
-                    Newton's 2nd Law
-                  </button>
-                  <button
-                    onClick={() => setActiveSim('induction')}
-                    style={{
-                      padding: '0.5rem 0.8rem', border: 'none', background: 'transparent', cursor: 'pointer',
-                      color: activeSim === 'induction' ? 'var(--primary-text)' : 'var(--text-muted)',
-                      borderBottom: activeSim === 'induction' ? '2px solid var(--primary-text)' : 'none',
-                      fontWeight: 700, fontSize: '0.75rem'
-                    }}
-                  >
-                    Induction (Faraday)
-                  </button>
-                  <button
-                    onClick={() => setActiveSim('plotter')}
-                    style={{
-                      padding: '0.5rem 0.8rem', border: 'none', background: 'transparent', cursor: 'pointer',
-                      color: activeSim === 'plotter' ? 'var(--primary-text)' : 'var(--text-muted)',
-                      borderBottom: activeSim === 'plotter' ? '2px solid var(--primary-text)' : 'none',
-                      fontWeight: 700, fontSize: '0.75rem'
-                    }}
-                  >
-                    Function Plotter
-                  </button>
-                </div>
-
-                {/* Newton Simulator Layout */}
-                {activeSim === 'newton' && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1 }}>
-                    <div style={{ display: 'flex', justifyItems: 'center', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', border: '1px solid var(--border-color)', overflow: 'hidden' }}>
-                      <canvas 
-                        ref={newtonCanvasRef} 
-                        width={380} 
-                        height={180} 
-                        style={{ width: '100%', height: '180px', display: 'block' }}
-                      />
-                    </div>
-                    
-                    {/* Controls Grid */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>Mass: {newtonMass} kg</span>
-                        <input
-                          type="range" min="1" max="5" step="0.5"
-                          value={newtonMass} onChange={e => setNewtonMass(parseFloat(e.target.value))}
-                          style={{ accentColor: 'var(--primary-text)', cursor: 'pointer' }}
-                        />
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>Force: {newtonForce} N</span>
-                        <input
-                          type="range" min="1" max="20" step="1"
-                          value={newtonForce} onChange={e => setNewtonForce(parseInt(e.target.value))}
-                          style={{ accentColor: 'var(--primary-text)', cursor: 'pointer' }}
-                        />
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', borderTop: '1px solid var(--border-color)', pt: '0.75rem', marginTop: 'auto' }}>
-                      <button
-                        onClick={() => {
-                          if (newtonRunning) {
-                            setNewtonRunning(false);
-                          } else {
-                            setNewtonRunning(true);
-                          }
-                        }}
-                        className="prof-btn"
-                        style={{ flex: 1, padding: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '0.8rem' }}
-                      >
-                        {newtonRunning ? <Pause size={14} /> : <Play size={14} />}
-                        {newtonRunning ? 'Pause Engine' : 'Run Simulator'}
-                      </button>
-                      <button
-                        onClick={() => {
-                          setNewtonRunning(false);
-                          newtonX.current = 50;
-                          newtonV.current = 0;
-                        }}
-                        style={{
-                          background: 'transparent', border: '1px solid var(--border-color)', cursor: 'pointer',
-                          color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          borderRadius: '8px', width: '38px', height: '34px'
-                        }}
-                      >
-                        <RotateCcw size={15} />
-                      </button>
-                    </div>
-
-                    <div style={{ background: 'var(--secondary)', padding: '0.75rem', borderRadius: '8px', fontSize: '0.75rem', borderLeft: '3px solid var(--primary-text)' }}>
-                      <strong>Formula Check:</strong> Acceleration (a) = Force (F) / Mass (m) = <span style={{ color: 'var(--primary-text)', fontWeight: 'bold' }}>{(newtonForce / newtonMass).toFixed(2)} m/s²</span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Induction (Faraday) Simulator Layout */}
-                {activeSim === 'induction' && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1 }}>
-                    <div style={{ display: 'flex', justifyItems: 'center', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', border: '1px solid var(--border-color)', overflow: 'hidden' }}>
-                      <canvas 
-                        ref={inductionCanvasRef} 
-                        width={380} 
-                        height={180} 
-                        style={{ width: '100%', height: '180px', display: 'block', cursor: 'ew-resize' }}
-                        onMouseMove={handleMagnetDrag}
-                      />
-                    </div>
-                    <div style={{ textAlign: 'center', fontSize: '0.75rem', color: 'var(--text-muted)', background: 'var(--secondary)', padding: '0.5rem', borderRadius: '6px' }}>
-                      💡 <strong>Interactive:</strong> Move your mouse cursor left & right inside the canvas to drag the magnet and induce electricity!
-                    </div>
-                    <div style={{ background: 'var(--secondary)', padding: '0.75rem', borderRadius: '8px', fontSize: '0.75rem', borderLeft: '3px solid var(--primary-text)', marginTop: 'auto' }}>
-                      <strong>Physics Concept:</strong> Moving magnetic fields change magnetic flux through a coil, inducing an Electromotive Force (EMF) which lights up the bulb!
-                    </div>
-                  </div>
-                )}
-
-                {/* Math Plotter Layout */}
-                {activeSim === 'plotter' && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1 }}>
-                    <div style={{ display: 'flex', justifyItems: 'center', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', border: '1px solid var(--border-color)', overflow: 'hidden' }}>
-                      <canvas 
-                        ref={plotterCanvasRef} 
-                        width={380} 
-                        height={180} 
-                        style={{ width: '100%', height: '180px', display: 'block' }}
-                      />
-                    </div>
-                    
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                      <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>Formula y = f(x)</label>
-                      <input
-                        type="text"
-                        value={plotFormula}
-                        onChange={e => setPlotFormula(e.target.value)}
-                        className="prof-input"
-                        placeholder="e.g. Math.sin(x/10) * 40"
-                        style={{ fontSize: '0.8rem', padding: '0.5rem 0.75rem' }}
-                      />
-                    </div>
-                    <div style={{ background: 'var(--secondary)', padding: '0.75rem', borderRadius: '8px', fontSize: '0.75rem', borderLeft: '3px solid var(--primary-text)' }}>
-                      Supports JavaScript Math object terms, e.g. `x * x / 15` or `Math.sin(x / 10) * 40`.
-                    </div>
-                  </div>
-                )}
-
-              </div>
-            )}
-
-            {/* Tab Contents: Pomodoro Timer */}
-            {activeTab === 'pomodoro' && (
-              <div className="prof-card" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1.5rem', flex: 1 }}>
-                
-                {/* Circular Glass Display */}
-                <div style={{
-                  width: '180px', height: '180px', borderRadius: '50%',
-                  background: 'rgba(255,255,255,0.02)', border: '6px solid var(--border-color)',
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                  boxShadow: 'var(--shadow-lg)'
-                }}>
-                  <span style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: pomMode === 'focus' ? 'var(--primary-text)' : '#22c55e' }}>
-                    {pomMode === 'focus' ? 'Study Focus' : 'Short Break'}
-                  </span>
-                  <h2 style={{ fontSize: '2.5rem', fontWeight: 700, margin: '0.2rem 0', color: 'var(--text-main)', fontFamily: 'monospace' }}>
-                    {formatTime(pomTime)}
-                  </h2>
-                  <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
-                    {pomActive ? 'Clock ticking...' : 'Timer paused'}
-                  </span>
-                </div>
-
-                {/* Clock Controls */}
-                <div style={{ display: 'flex', gap: '1rem', width: '100%', maxWidth: '240px' }}>
-                  <button
-                    onClick={() => setPomActive(!pomActive)}
-                    className="prof-btn"
-                    style={{ flex: 2, padding: '0.6rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '0.85rem' }}
-                  >
-                    {pomActive ? <Pause size={14} /> : <Play size={14} />}
-                    {pomActive ? 'Pause' : 'Start Focus'}
-                  </button>
-                  <button
-                    onClick={handleResetPom}
-                    style={{
-                      flex: 1, background: 'transparent', border: '1px solid var(--border-color)', cursor: 'pointer',
-                      color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      borderRadius: '8px', fontSize: '0.8rem', gap: '4px'
-                    }}
-                  >
-                    <RotateCcw size={14} /> Reset
-                  </button>
-                </div>
-
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center', lineHeight: '1.4' }}>
-                  Use the Pomodoro Technique to study for 25 minutes, then take a 5-minute break. Highly recommended for exam prep!
-                </div>
-              </div>
-            )}
-
-          </div>
-
-          {/* Right Column: Unified AI Tutor Chatroom */}
-          <div className="prof-card" style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', padding: 0 }}>
-            
-            {/* Room Header */}
-            <div style={{ padding: '1.2rem 1.5rem', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.01)' }}>
-              <div>
-                <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-main)', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Sparkles size={16} style={{ color: 'var(--primary-text)' }} /> Unified AI Tutor Room
-                </h3>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Ask questions about any school subject.</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.7rem', color: 'var(--primary-text)', background: 'rgba(124, 98, 243, 0.1)', padding: '0.25rem 0.5rem', borderRadius: '20px', fontWeight: 700 }}>
-                Online Study Assistant
-              </div>
-            </div>
-
-            {/* Suggested Prompt Chips */}
-            <div style={{ padding: '0.8rem 1.2rem', display: 'flex', gap: '0.5rem', overflowX: 'auto', borderBottom: '1px solid var(--border-color)' }}>
-              {suggestedPrompts.map((p, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => handleAsk(p)}
-                  disabled={loading}
-                  style={{
-                    whiteSpace: 'nowrap', padding: '0.4rem 0.8rem', border: '1px solid var(--border-color)',
-                    background: 'var(--secondary)', color: 'var(--text-muted)', fontSize: '0.7rem',
-                    borderRadius: '20px', cursor: 'pointer', transition: 'all 0.2s', fontWeight: 600
-                  }}
-                  onMouseEnter={e => {
-                    e.currentTarget.style.borderColor = 'var(--primary-text)';
-                    e.currentTarget.style.color = 'var(--text-main)';
-                  }}
-                  onMouseLeave={e => {
-                    e.currentTarget.style.borderColor = 'var(--border-color)';
-                    e.currentTarget.style.color = 'var(--text-muted)';
-                  }}
-                >
-                  {p}
-                </button>
-              ))}
-            </div>
-
-            {/* Chat Messages Log */}
-            <div style={{ flex: 1, padding: '1.5rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1.2rem', minHeight: '350px', maxHeight: '55vh' }}>
-              {chatHistory.map(msg => (
-                <div key={msg.id} style={{
-                  alignSelf: msg.sender === 'user' ? 'flex-end' : 'flex-start',
-                  background: msg.sender === 'user' ? 'var(--primary-text)' : 'var(--secondary)',
-                  color: msg.sender === 'user' ? 'white' : 'var(--text-main)',
-                  padding: '1rem 1.25rem', borderRadius: '12px',
-                  borderBottomRightRadius: msg.sender === 'user' ? '2px' : '12px',
-                  borderBottomLeftRadius: msg.sender === 'bot' ? '2px' : '12px',
-                  maxWidth: '85%', fontSize: '0.9rem', lineHeight: '1.55',
-                  border: msg.sender === 'bot' ? '1px solid var(--border-color)' : 'none',
-                  boxShadow: 'var(--shadow-sm)'
-                }}>
-                  {msg.sender === 'bot' ? renderFormattedMessage(msg.text) : msg.text}
-                </div>
-              ))}
-              {loading && (
-                <div style={{ alignSelf: 'flex-start', background: 'var(--secondary)', color: 'var(--text-main)', padding: '1rem 1.25rem', borderRadius: '12px', borderBottomLeftRadius: '2px', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <div style={{ width: '8px', height: '8px', background: 'var(--text-muted)', borderRadius: '50%', animation: 'bounce 1.4s infinite ease-in-out both' }} />
-                  <div style={{ width: '8px', height: '8px', background: 'var(--text-muted)', borderRadius: '50%', animation: 'bounce 1.4s infinite ease-in-out both 0.2s' }} />
-                  <div style={{ width: '8px', height: '8px', background: 'var(--text-muted)', borderRadius: '50%', animation: 'bounce 1.4s infinite ease-in-out both 0.4s' }} />
-                </div>
-              )}
-              <div ref={chatEndRef} />
-            </div>
-
-            {/* Chat Input form */}
-            <form onSubmit={e => { e.preventDefault(); handleAsk(); }} style={{ padding: '1.2rem', borderTop: '1px solid var(--border-color)', background: 'var(--secondary)', display: 'flex', gap: '0.8rem' }}>
-              <input
-                type="text"
-                placeholder="Ask a question about any subject..."
-                value={question}
-                onChange={e => setQuestion(e.target.value)}
-                disabled={loading}
-                className="prof-input"
-                style={{ flex: 1, padding: '0.75rem 1.25rem', fontSize: '0.9rem', borderRadius: '30px' }}
-              />
-              <button 
-                type="submit" 
-                disabled={loading || !question.trim()}
-                className="prof-btn"
-                style={{
-                  borderRadius: '50%', width: '42px', height: '42px', padding: 0,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: 'var(--primary-text)', border: 'none', cursor: 'pointer',
-                  flexShrink: 0
-                }}
-              >
-                <Send size={16} color="white" />
-              </button>
-            </form>
-
+            <input
+              type="text"
+              placeholder="Ask a question about any subject..."
+              value={question}
+              onChange={e => setQuestion(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter' && !loading) { e.preventDefault(); handleAsk(); } }}
+              disabled={loading}
+              style={{
+                flex: 1,
+                background: 'transparent',
+                border: 'none',
+                outline: 'none',
+                color: 'var(--text-main)',
+                fontSize: '0.95rem',
+                padding: '0.6rem 0'
+              }}
+            />
+            <button 
+              onClick={() => handleAsk()}
+              disabled={loading || !question.trim()}
+              style={{
+                borderRadius: '50%', width: '40px', height: '40px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: 'var(--primary-text)', border: 'none', cursor: 'pointer',
+                opacity: loading || !question.trim() ? 0.4 : 1,
+                transition: 'all 0.2s',
+                flexShrink: 0
+              }}
+            >
+              <Send size={15} color="white" />
+            </button>
           </div>
 
         </div>
-
       </main>
     </>
   );
