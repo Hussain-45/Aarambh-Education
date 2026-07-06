@@ -514,82 +514,122 @@ const StudyCompanion = () => {
   // ----------------------------------------
   const renderFormattedMessage = (text) => {
     if (!text) return null;
-    const lines = text.split('\n');
-
-    return lines.map((line, lineIdx) => {
-      // Acknowledge custom headers
-      if (line.startsWith('### ')) {
-        return <h3 key={lineIdx} style={{ fontSize: '1rem', fontWeight: 700, marginTop: '0.8rem', marginBottom: '0.4rem', color: 'var(--text-main)' }}>{line.replace('### ', '')}</h3>;
+    
+    // Split text by $$ to separate block equations from normal text blocks
+    const blocks = text.split('$$');
+    
+    return blocks.map((block, blockIdx) => {
+      // If block index is odd, it's a block equation
+      if (blockIdx % 2 === 1) {
+        const formula = block.trim();
+        if (window.katex) {
+          try {
+            const html = window.katex.renderToString(formula, { displayMode: true, throwOnError: false });
+            return (
+              <div 
+                key={`eq-block-${blockIdx}`} 
+                dangerouslySetInnerHTML={{ __html: html }} 
+                style={{ margin: '1rem 0', overflowX: 'auto', background: 'rgba(255,255,255,0.02)', padding: '0.75rem', borderRadius: '8px' }}
+              />
+            );
+          } catch (e) {
+            return <div key={`eq-block-err-${blockIdx}`} style={{ textAlign: 'center', fontFamily: 'monospace', margin: '0.8rem 0', padding: '0.5rem', background: 'rgba(255,0,0,0.05)', borderRadius: '6px' }}>{formula}</div>;
+          }
+        }
+        return <div key={`eq-block-fallback-${blockIdx}`} style={{ textAlign: 'center', fontFamily: 'monospace', margin: '0.8rem 0' }}>{formula}</div>;
       }
-      if (line.startsWith('## ')) {
-        return <h2 key={lineIdx} style={{ fontSize: '1.15rem', fontWeight: 700, marginTop: '1rem', marginBottom: '0.5rem', color: 'var(--text-main)' }}>{line.replace('## ', '')}</h2>;
-      }
-
-      // Check for bullet list items
-      let isBullet = false;
-      let cleanLine = line;
-      if (line.trim().startsWith('* ') || line.trim().startsWith('- ')) {
-        isBullet = true;
-        cleanLine = line.trim().substring(2);
-      }
-
-      // Parse inline styles: bold (**), italic (*), and inline code (`)
-      const parts = [];
-      const inlineRegex = /(\*\*([^*`]+)\*\*)|(\*([^*`]+)\*)|(`([^`]+)`)/g;
-      let match;
-      let lastIndex = 0;
-
-      while ((match = inlineRegex.exec(cleanLine)) !== null) {
-        if (match.index > lastIndex) {
-          parts.push(cleanLine.substring(lastIndex, match.index));
+      
+      // Even block index: normal text lines that can contain inline math ($...$)
+      const lines = block.split('\n');
+      
+      return lines.map((line, lineIdx) => {
+        // Headers
+        if (line.startsWith('### ')) {
+          return <h3 key={`h3-${lineIdx}`} style={{ fontSize: '1rem', fontWeight: 700, marginTop: '0.8rem', marginBottom: '0.4rem', color: 'var(--text-main)' }}>{line.replace('### ', '')}</h3>;
+        }
+        if (line.startsWith('## ')) {
+          return <h2 key={`h2-${lineIdx}`} style={{ fontSize: '1.15rem', fontWeight: 700, marginTop: '1rem', marginBottom: '0.5rem', color: 'var(--text-main)' }}>{line.replace('## ', '')}</h2>;
         }
 
-        if (match[1]) {
-          // Bold text: **text**
-          parts.push(<strong key={match.index} style={{ fontWeight: 700, color: 'var(--text-main)' }}>{match[2]}</strong>);
-        } else if (match[3]) {
-          // Italic text: *text*
-          parts.push(<em key={match.index} style={{ fontStyle: 'italic' }}>{match[4]}</em>);
-        } else if (match[5]) {
-          // Inline code/highlight: `code`
-          parts.push(
-            <code 
-              key={match.index} 
-              style={{ 
-                fontFamily: 'monospace', 
-                background: 'rgba(255,255,255,0.06)', 
-                color: 'var(--primary-text)', 
-                padding: '0.15rem 0.35rem', 
-                borderRadius: '4px',
-                fontSize: '0.85rem'
-              }}
-            >
-              {match[6]}
-            </code>
+        // Bullet points
+        let isBullet = false;
+        let cleanLine = line;
+        if (line.trim().startsWith('* ') || line.trim().startsWith('- ')) {
+          isBullet = true;
+          cleanLine = line.trim().substring(2);
+        }
+
+        // Parse bold, italic, code, and inline LaTeX ($...$)
+        const parts = [];
+        const inlineRegex = /(\*\*([^*`$]+)\*\*)|(\*([^*`$]+)\*)|(`([^`]+)`)|(\$([^\$]+)\$)/g;
+        let match;
+        let lastIndex = 0;
+
+        while ((match = inlineRegex.exec(cleanLine)) !== null) {
+          if (match.index > lastIndex) {
+            parts.push(cleanLine.substring(lastIndex, match.index));
+          }
+
+          if (match[1]) {
+            // Bold
+            parts.push(<strong key={`b-${match.index}`} style={{ fontWeight: 700, color: 'var(--text-main)' }}>{match[2]}</strong>);
+          } else if (match[3]) {
+            // Italic
+            parts.push(<em key={`i-${match.index}`} style={{ fontStyle: 'italic' }}>{match[4]}</em>);
+          } else if (match[5]) {
+            // Inline code
+            parts.push(
+              <code 
+                key={`c-${match.index}`} 
+                style={{ 
+                  fontFamily: 'monospace', 
+                  background: 'rgba(255,255,255,0.06)', 
+                  color: 'var(--primary-text)', 
+                  padding: '0.15rem 0.35rem', 
+                  borderRadius: '4px',
+                  fontSize: '0.85rem'
+                }}
+              >
+                {match[6]}
+              </code>
+            );
+          } else if (match[7]) {
+            // Inline equation
+            const formula = match[8];
+            if (window.katex) {
+              try {
+                const html = window.katex.renderToString(formula, { displayMode: false, throwOnError: false });
+                parts.push(<span key={`eq-${match.index}`} dangerouslySetInnerHTML={{ __html: html }} style={{ padding: '0 0.2rem' }} />);
+              } catch (e) {
+                parts.push(<code key={`eq-err-${match.index}`} style={{ fontFamily: 'monospace', background: 'rgba(255,0,0,0.05)', padding: '2px 4px', borderRadius: '4px' }}>{formula}</code>);
+              }
+            } else {
+              parts.push(<code key={`eq-fallback-${match.index}`} style={{ fontFamily: 'monospace' }}>{formula}</code>);
+            }
+          }
+
+          lastIndex = inlineRegex.lastIndex;
+        }
+
+        if (lastIndex < cleanLine.length) {
+          parts.push(cleanLine.substring(lastIndex));
+        }
+
+        if (isBullet) {
+          return (
+            <div key={`bullet-${lineIdx}`} style={{ display: 'flex', gap: '0.5rem', marginLeft: '1rem', marginBottom: '0.35rem' }}>
+              <span style={{ color: 'var(--primary-text)', fontWeight: 'bold' }}>•</span>
+              <div style={{ flex: 1 }}>{parts}</div>
+            </div>
           );
         }
 
-        lastIndex = inlineRegex.lastIndex;
-      }
-
-      if (lastIndex < cleanLine.length) {
-        parts.push(cleanLine.substring(lastIndex));
-      }
-
-      if (isBullet) {
         return (
-          <div key={lineIdx} style={{ display: 'flex', gap: '0.5rem', marginLeft: '1rem', marginBottom: '0.35rem' }}>
-            <span style={{ color: 'var(--primary-text)', fontWeight: 'bold' }}>•</span>
-            <div style={{ flex: 1 }}>{parts}</div>
+          <div key={`line-${lineIdx}`} style={{ minHeight: '1.2em', marginBottom: '0.5rem' }}>
+            {parts}
           </div>
         );
-      }
-
-      return (
-        <div key={lineIdx} style={{ minHeight: '1.2em', marginBottom: '0.5rem' }}>
-          {parts}
-        </div>
-      );
+      });
     });
   };
 
