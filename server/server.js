@@ -2410,11 +2410,12 @@ CRITICAL PRIVACY RULE: You are strictly forbidden from discussing or answering q
 
 // AI Study Companion / Academic Tutor Endpoint (Google Gemini)
 app.post('/api/ai/study-help', authenticateToken, async (req, res) => {
-  const { subject, question, history } = req.body;
+  const { question, history } = req.body;
+  const subject = req.body.subject || 'General Academics';
   const apiKey = process.env.GEMINI_API_KEY;
 
-  if (!subject || !question) {
-    return res.status(400).json({ error: 'Subject and Question are required' });
+  if (!question) {
+    return res.status(400).json({ error: 'Question is required' });
   }
 
   // 1. Offline Mode Fallback
