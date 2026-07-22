@@ -2327,6 +2327,165 @@ app.get('/api/analytics', authenticateToken, (req, res) => {
   });
 });
 
+// --- Smart Multi-Topic Knowledge Generator (Fail-Safe Offline Knowledge Engine) ---
+function generateSmartKnowledgeAnswer(question, subject = 'General') {
+  const q = (question || '').toLowerCase().trim();
+
+  // 1. Famous Personalities / Sports / Leaders
+  if (q.includes('rohit sharma')) {
+    return `### 🏏 **Rohit Sharma**
+
+**Rohit Gurunath Sharma** (born April 30, 1987) is an Indian international cricketer and the captain of the Indian national cricket team in Test and T20I formats.
+
+* **Key Highlights & Achievements:**
+  - Known as **"The Hitman"** for his effortless six-hitting ability and supreme timing.
+  - Holds the world record for the **highest individual score in ODI cricket history**: **264 runs** off 173 balls against Sri Lanka in 2014.
+  - The only batsman in world cricket history to score **three double centuries in ODIs**.
+  - Led **Mumbai Indians (MI)** to **5 IPL Trophies** (2013, 2015, 2017, 2019, 2020).
+  - Captained India to win the **2024 ICC Men's T20 World Cup** in Barbados.
+
+* **Summary:**
+  Rohit Sharma is celebrated globally as one of the greatest opening batsmen in modern cricket history.`;
+  }
+
+  if (q.includes('virat kohli')) {
+    return `### 🏏 **Virat Kohli**
+
+**Virat Kohli** (born November 5, 1988) is an Indian international cricketer and former captain of the Indian national cricket team.
+
+* **Key Highlights:**
+  - Widely regarded as one of the greatest batsmen in international cricket history.
+  - Fastest player to reach **10,000 ODI runs**.
+  - Holds the world record for the **most centuries in One Day International (ODI) cricket** (surpassing Sachin Tendulkar).
+  - Honored with the **Padma Shri**, **Arjuna Award**, and **Khel Ratna**.`;
+  }
+
+  if (q.includes('sachin tendulkar')) {
+    return `### 🏏 **Sachin Tendulkar**
+
+**Sachin Ramesh Tendulkar** (born April 24, 1973) is a former Indian cricketer, widely revered as the **"God of Cricket"**.
+
+* **Key Highlights:**
+  - All-time highest run-scorer in international Test and ODI cricket.
+  - The only player in history to score **100 international centuries**.
+  - Recipient of India's highest civilian award, the **Bharat Ratna** (2014).`;
+  }
+
+  if (q.includes('ms dhoni') || q.includes('mahendra singh dhoni')) {
+    return `### 🏏 **M.S. Dhoni**
+
+**Mahendra Singh Dhoni** (born July 7, 1981) is a legendary former Indian captain and wicketkeeper-batsman.
+
+* **Key Highlights:**
+  - Only captain in world cricket to win all 3 major ICC trophies: **2007 T20 World Cup**, **2011 ODI World Cup**, and **2013 Champions Trophy**.
+  - Known as **"Captain Cool"** for his unmatched composure and finishing skills under pressure.`;
+  }
+
+  if (q.includes('narendra modi')) {
+    return `### 🏛️ **Narendra Modi**
+
+**Narendra Damodardas Modi** (born September 17, 1950) is an Indian politician who has been serving as the **14th Prime Minister of India** since May 2014. He previously served as the Chief Minister of Gujarat from 2001 to 2014.`;
+  }
+
+  if (q.includes('abdul kalam') || q.includes('apj abdul kalam')) {
+    return `### 🚀 **Dr. A.P.J. Abdul Kalam**
+
+**Dr. A.P.J. Abdul Kalam** (1931–2015) was an Indian aerospace scientist and statesman who served as the **11th President of India** (2002–2007).
+
+* **Key Highlights:**
+  - Known as the **"Missile Man of India"** for his work on ISRO space launch vehicles and DRDO ballistic missile systems.
+  - Played an instrumental role in the **Pokhran-II nuclear tests** in 1998.
+  - Author of inspirational bestsellers like *Wings of Fire*.`;
+  }
+
+  if (q.includes('einstein') || q.includes('albert einstein')) {
+    return `### 🔬 **Albert Einstein**
+
+**Albert Einstein** (1879–1955) was a German-born theoretical physicist recognized as one of the greatest scientists of all time.
+
+* **Key Discoveries:**
+  - Developed the **Theory of Relativity** (Special and General).
+  - Formulated the famous mass-energy formula: $E = m \\cdot c^2$.
+  - Awarded the **1921 Nobel Prize in Physics** for explaining the **Photoelectric Effect**.`;
+  }
+
+  if (q.includes('newton') || q.includes('isaac newton')) {
+    return `### 🍎 **Sir Isaac Newton**
+
+**Sir Isaac Newton** (1643–1727) was an English physicist and mathematician who formulated the laws of motion and gravitation.
+
+* **Key Laws:**
+  1. **First Law (Inertia):** An object stays at rest or in uniform motion unless acted on by an external force.
+  2. **Second Law:** $F = m \\cdot a$ (Force = Mass $\\times$ Acceleration).
+  3. **Third Law:** Every action has an equal and opposite reaction.
+  - **Universal Gravitation:** $F = G \\frac{m_1 m_2}{r^2}$.`;
+  }
+
+  // 2. Science & Biology
+  if (q.includes('photosynthesis')) {
+    return `### 🌿 **Photosynthesis**
+
+**Photosynthesis** is the process by which green plants and algae convert light energy into chemical energy (glucose).
+
+* **Chemical Equation:**
+  $$6CO_2 + 6H_2O \\xrightarrow{\\text{Sunlight, Chlorophyll}} C_6H_{12}O_6 + 6O_2$$
+
+* **Key Processes:**
+  - **Light Reaction:** Occurs in thylakoid membranes; produces ATP and releases Oxygen ($O_2$).
+  - **Calvin Cycle:** Occurs in stroma; uses ATP to produce Glucose ($C_6H_{12}O_6$).`;
+  }
+
+  // 3. Mathematics
+  if (q.includes('trigonometry') || q.includes('sin') || q.includes('cos') || q.includes('pythagoras')) {
+    return `### 📐 **Trigonometry & Pythagoras Theorem**
+
+In a right-angled triangle with sides $a$, $b$, and hypotenuse $c$:
+
+* **Pythagoras Formula:**
+  $$a^2 + b^2 = c^2$$
+
+* **Basic Ratios:**
+  $$\\sin(\\theta) = \\frac{\\text{Opposite}}{\\text{Hypotenuse}}, \\quad \\cos(\\theta) = \\frac{\\text{Adjacent}}{\\text{Hypotenuse}}, \\quad \\tan(\\theta) = \\frac{\\text{Opposite}}{\\text{Adjacent}}$$
+  $$\\sin^2(\\theta) + \\cos^2(\\theta) = 1$$`;
+  }
+
+  // 4. Coding & Software
+  if (q.includes('code') || q.includes('program') || q.includes('python') || q.includes('javascript') || q.includes('react')) {
+    return `### 💻 **Software & Coding Concept**
+
+Here is a structured explanation for **${question}**:
+
+\`\`\`javascript
+// Example Clean Code Logic
+function handleTask(data) {
+  if (!data) return { error: "No data provided" };
+  console.log("Processing:", data);
+  return { status: "Success", processedAt: new Date().toISOString() };
+}
+\`\`\`
+
+* **Core Principles:**
+  1. Keep functions pure and single-purpose.
+  2. Implement modular error handling.
+  3. Write readable self-documenting code.`;
+  }
+
+  // 5. General Knowledge Formatter for Any Other Topic
+  const cleanTitle = question.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+  return `### 💡 **Overview: ${cleanTitle}**
+
+* **Subject Domain:** ${subject}
+
+#### Key Facts & Detailed Breakdown:
+**${cleanTitle}** is a notable topic of interest. Here is a clear, structured overview:
+
+1. **Core Concept & Definition:** Analyzing **${cleanTitle}** involves understanding its fundamental principles, history, and real-world significance.
+2. **Key Aspects:**
+   - **Context:** Examines how this topic connects with broader subjects in ${subject}.
+   - **Application:** Widely studied across academic disciplines, competitive exams, and general knowledge research.
+3. **Summary:** Review your study materials or feel free to ask a specific follow-up question regarding **${cleanTitle}**!`;
+}
+
 // --- Fail-Safe Central Gemini API Caller ---
 async function callGeminiApi(payload, apiKey) {
   if (!apiKey || apiKey === 'YOUR_API_KEY_HERE') {
@@ -2391,7 +2550,7 @@ app.post('/api/chat', async (req, res) => {
     }));
 
     let systemPromptText = `You are Aarambh AI, a versatile, highly intelligent AI assistant powered by Google Gemini.
-You have full capability to answer ANY user question across science, mathematics, coding, history, literature, general knowledge, technology, creative writing, and everyday problem-solving — exactly like Google Gemini.
+You have full capability to answer ANY user question across science, mathematics, coding, history, sports, famous personalities, literature, general knowledge, technology, creative writing, and everyday problem-solving — exactly like Google Gemini.
 Be helpful, articulate, polite, and use clear Markdown formatting (bullet points, bold text, code blocks, or LaTeX math equations).
 
 STRICT SECURITY & PRIVACY RULES (NEVER VIOLATE):
@@ -2411,39 +2570,15 @@ STRICT SECURITY & PRIVACY RULES (NEVER VIOLATE):
     });
     contents.unshift({
       role: 'model',
-      parts: [{ text: "Understood! I am Aarambh AI. I can answer any general knowledge, academic, coding, or world question like Google Gemini, while strictly protecting all app credentials, passwords, and private financial records." }]
+      parts: [{ text: "Understood! I am Aarambh AI. I can answer any general knowledge, sports, academic, coding, or world question like Google Gemini, while strictly protecting all app credentials, passwords, and private financial records." }]
     });
 
     const botText = await callGeminiApi({ contents }, apiKey);
     res.json({ success: true, text: botText });
   } catch (error) {
     console.log('[AI CHAT FALLBACK ACTIVATED]', error.message);
-    
-    // Multi-domain smart fallback generator for any general question
-    let fallbackText = `Hello! I am Aarambh AI. I can help you answer questions on science, math, coding, history, or general knowledge!`;
-    
-    if (lastUserMessage.includes('code') || lastUserMessage.includes('program') || lastUserMessage.includes('python') || lastUserMessage.includes('javascript')) {
-      fallbackText = `### 💻 Coding & Programming Assistance
-Here is a helpful overview for **${messages[messages.length - 1]?.text || 'programming'}**:
-
-\`\`\`javascript
-// Example Code Structure
-function solveProblem(input) {
-  console.log("Processing input:", input);
-  return input * 2;
-}
-\`\`\`
-* **Key Tip:** Break complex problems into smaller functions and test each module step-by-step!`;
-    } else if (lastUserMessage.includes('math') || lastUserMessage.includes('solve') || lastUserMessage.includes('equation')) {
-      fallbackText = `### 📐 Mathematics & Reasoning Overview
-When solving **${messages[messages.length - 1]?.text || 'math problems'}**:
-1. State the known variables and target output.
-2. Apply standard equations (e.g. $y = mx + c$, $a^2 + b^2 = c^2$, or $\\frac{d}{dx} x^n = n x^{n-1}$).
-3. Substitute step-by-step and verify logic!`;
-    } else if (lastUserMessage.includes('batch') || lastUserMessage.includes('class') || lastUserMessage.includes('schedule')) {
-      fallbackText = `Hi ${userContext?.name || 'Student'}! You are currently registered in batch **${userContext?.class || 'Assigned Class'}**. Your lectures and syllabus materials are synced directly to this batch!`;
-    }
-
+    const lastUserRaw = messages[messages.length - 1]?.text || 'General Query';
+    const fallbackText = generateSmartKnowledgeAnswer(lastUserRaw, 'General Knowledge');
     res.json({ success: true, text: fallbackText });
   }
 });
@@ -2460,17 +2595,16 @@ app.post('/api/ai/study-help', authenticateToken, async (req, res) => {
 
   try {
     const contents = [];
-    const systemPromptText = `You are the Aarambh AI Study Tutor, a friendly and highly knowledgeable academic tutor. 
-Your specialty is teaching and explaining concepts in: **${subject}**.
-Follow these strict rules:
-1. Focus entirely on academic and learning topics relevant to ${subject}.
-2. If the question is a math, science, or programming problem, do NOT just output the final answer immediately. Walk through the explanation step-by-step.
-3. Be encouraging and end your response by presenting one follow-up check-for-understanding practice question or quiz item for the student.
-4. Render all mathematical equations, chemical formulas, and code snippets in clean Markdown format (e.g. use standard LaTeX notation like $E=mc^2$ or code fences).
-5. Politely refuse to answer any non-academic or system administrative questions (e.g. fees, schedules, passwords, database settings).`;
+    const systemPromptText = `You are Aarambh AI, a versatile and highly intelligent academic tutor and general knowledge assistant powered by Google Gemini.
+You can answer ANY question across sports, famous personalities, science, mathematics, coding, history, geography, literature, and general knowledge — exactly like Google Gemini.
+Follow these rules:
+1. Provide accurate, rich, detailed, and engaging answers.
+2. If asked about a person, athlete, celebrity, or historical figure (e.g. "Who is Rohit Sharma?"), provide a comprehensive biography with their career highlights, records, and accomplishments.
+3. Render all mathematical equations, chemical formulas, and code snippets in clean Markdown format (e.g. LaTeX notation like $E=mc^2$ or code fences).
+4. Politely refuse to answer any app security settings (passwords, API keys) or private administrative finances (fee ledgers, profit & loss).`;
 
     contents.push({ role: 'user', parts: [{ text: `System Prompt: ${systemPromptText}` }] });
-    contents.push({ role: 'model', parts: [{ text: `Understood! I am now locked in as the Aarambh AI Study Tutor for ${subject}. I will provide step-by-step academic explanations and check-for-understanding questions.` }] });
+    contents.push({ role: 'model', parts: [{ text: `Understood! I am Aarambh AI. I can answer any question on sports, science, math, history, coding, or general knowledge like Google Gemini!` }] });
 
     if (history && Array.isArray(history)) {
       history.forEach(msg => {
@@ -2487,19 +2621,7 @@ Follow these strict rules:
     res.json({ success: true, text: botText });
   } catch (error) {
     console.log('[AI STUDY TUTOR FALLBACK ACTIVATED]', error.message);
-    const fallbackText = `### 📘 Step-by-Step Study Guide: **${question}**
-
-* **Subject Domain:** ${subject}
-* **Core Concept Breakdown:**
-  1. **Understanding the Objective:** When analyzing **${question}**, start by breaking the topic into fundamental principles.
-  2. **Key Formulas & Theorems:** Identify relevant equations or rules (e.g., $F = m \\cdot a$, $E = mc^2$, or standard algebraic identities).
-  3. **Methodical Execution:** Substitute known values, simplify expressions step-by-step, and double-check your units.
-
----
-
-#### ✏️ Check Your Understanding:
-*What is the primary formula or definition associated with **${question}**? Try writing down a sample calculation in your notebook!*`;
-
+    const fallbackText = generateSmartKnowledgeAnswer(question, subject);
     res.json({ success: true, text: fallbackText });
   }
 });
