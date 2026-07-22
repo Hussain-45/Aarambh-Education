@@ -39,8 +39,8 @@ export const generateStudentReportCard = (student, attendance, attempts, assignm
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   doc.setTextColor(...colors.dark);
-  doc.text('Premium Tutoring & Mock Test Platform', 15, 35);
-  doc.text('Email: info@aarambh.edu | Web: www.aarambh.edu', 15, 39);
+  doc.text('Pritam Colony, Giaspura, Ludhiana | Call: +91 96464 99630', 15, 35);
+  doc.text('Email: aarambhinstitute46@gmail.com', 15, 39);
 
   // Date and Title
   const todayStr = new Date().toLocaleDateString('en-US', {

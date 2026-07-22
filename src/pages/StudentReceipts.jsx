@@ -5,6 +5,7 @@ import Header from '../components/Header';
 import { IndianRupee, Download, Info, CheckCircle2, CreditCard } from 'lucide-react';
 import { exportToPDF } from '../utils/exportUtils';
 import FeeReceiptModal from '../components/FeeReceiptModal';
+import upiQr from '../assets/upi_qr.jpg';
 
 const StudentReceipts = () => {
   const { loggedInUser, fees, recordFeePayment, students, submitUpiPayment } = useContext(AppContext);
@@ -244,13 +245,19 @@ const StudentReceipts = () => {
                             </div>
                           )}
                           
-                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'white', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)', margin: '0 auto', maxWidth: '200px' }}>
-                            <img src={qrCodeUrl} alt="UPI QR Code" style={{ width: '150px', height: '150px' }} />
-                            <span style={{ fontSize: '0.75rem', color: '#666', marginTop: '0.5rem', fontWeight: 600 }}>Pay ₹{remainingAmount} via UPI</span>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'white', padding: '1rem', borderRadius: '12px', border: '1px solid var(--border-color)', margin: '0 auto', width: '100%', maxWidth: '240px', boxShadow: 'var(--shadow-sm)' }}>
+                            <img src={upiQr} alt="Real Kotak UPI QR Code" style={{ width: '100%', maxHeight: '340px', objectFit: 'contain', borderRadius: '8px' }} />
+                            <div style={{ fontSize: '0.85rem', color: '#0f172a', marginTop: '0.6rem', fontWeight: 700, textAlign: 'center' }}>
+                              Pay ₹{remainingAmount} for {currentSelectedFee?.month}
+                            </div>
                           </div>
 
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center' }}>
-                            UPI ID: <strong>aarambh@upi</strong> | Payee: <strong>Aarambh Education</strong>
+                          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center', background: 'var(--bg-main)', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                            <div>Payee: <strong style={{ color: 'var(--text-main)' }}>POOJA PANDEY</strong> (Kotak Bank)</div>
+                            <div>UPI ID: <strong style={{ color: 'var(--primary-text)' }}>aarambheducation@kotak</strong></div>
+                            <div>UPI Number: <strong style={{ color: 'var(--text-main)' }}>9888995864</strong></div>
+                            <div style={{ fontSize: '0.75rem', marginTop: '0.2rem', color: 'var(--text-muted)' }}>📍 Pritam Colony, Giaspura, Ludhiana</div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>📞 Helpline: +91 96464 99630</div>
                           </div>
 
                           <form onSubmit={handleUpiPaymentSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>

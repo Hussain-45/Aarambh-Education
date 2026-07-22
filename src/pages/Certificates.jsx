@@ -297,7 +297,7 @@ export default function Certificates() {
       doc.setTextColor(148, 163, 184);
       doc.setFont('Helvetica', 'italic');
       doc.setFontSize(6);
-      doc.text('If found, return to school desk. Call: +91 98765 43210', x + cardW / 2, y + 116, { align: 'center' });
+      doc.text('Pritam Colony, Giaspura, Ludhiana | Call: +91 96464 99630', x + cardW / 2, y + 116, { align: 'center' });
     });
 
     doc.save(`Student_ID_Cards_${selectedClass.replace(/\s+/g, '_')}.pdf`);
