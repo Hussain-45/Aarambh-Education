@@ -67,7 +67,7 @@ const AuthRoute = ({ children, allowedRoles }) => {
 
 // Main App Layout Wrapper
 const AppLayout = () => {
-  const { isAuthenticated, userRole } = useContext(AppContext);
+  const { isAuthenticated, userRole, sidebarCollapsed, setSidebarCollapsed } = useContext(AppContext);
   
   const getDashboardRoute = () => {
     if (userRole === 'admin') return '/dashboard';
@@ -77,6 +77,21 @@ const AppLayout = () => {
 
   return (
     <div className="app-container">
+      {/* Mobile Drawer Backdrop Overlay */}
+      {isAuthenticated && !sidebarCollapsed && (
+        <div 
+          className="mobile-overlay"
+          onClick={() => setSidebarCollapsed(true)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.5)',
+            backdropFilter: 'blur(3px)',
+            zIndex: 9998,
+            display: 'none'
+          }}
+        />
+      )}
       <ToastContainer />
       <Chatbot />
       <Routes>
