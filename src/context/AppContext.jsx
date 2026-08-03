@@ -3,6 +3,8 @@ import React, { createContext, useState, useEffect } from 'react';
 export const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
+  const API_URL = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : 'https://aarambh-backend-1sce.onrender.com/api');
+
   // Authentication State
   const [authToken, setAuthToken] = useState(() => localStorage.getItem('token') || null);
   const [userRole, setUserRole] = useState(() => localStorage.getItem('userRole') || null);
@@ -268,7 +270,7 @@ export const AppProvider = ({ children }) => {
   // Auth Operations
   const loginAdmin = async (username, password) => {
     try {
-      const response = await fetch('http://localhost:5000/api/auth/login', {
+      const response = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password, role: 'admin' })
@@ -293,7 +295,7 @@ export const AppProvider = ({ children }) => {
 
   const registerAdmin = async (username, password) => {
     try {
-      const response = await fetch('http://localhost:5000/api/auth/register-admin', {
+      const response = await fetch(`${API_URL}/auth/register-admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password })
@@ -319,7 +321,7 @@ export const AppProvider = ({ children }) => {
   const loginStudent = async (username, param2, param3) => {
     const actualPassword = param3 !== undefined ? param3 : param2;
     try {
-      const response = await fetch('http://localhost:5000/api/auth/login', {
+      const response = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password: actualPassword, role: 'student' })
@@ -344,7 +346,7 @@ export const AppProvider = ({ children }) => {
 
   const loginTeacher = async (username, password) => {
     try {
-      const response = await fetch('http://localhost:5000/api/auth/login', {
+      const response = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password, role: 'teacher' })
@@ -1976,7 +1978,6 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  const API_URL = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : 'https://aarambh-backend-1sce.onrender.com/api');
   const authHeaders = {
     'Content-Type': 'application/json',
     ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
