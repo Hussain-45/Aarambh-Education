@@ -3995,6 +3995,9 @@ app.delete('/api/syllabus/:id', authenticateToken, (req, res) => {
     if (err) return res.status(500).json({ error: err.message });
     logAction('SYLLABUS_DELETED', `Deleted syllabus topic ID ${topicId}`);
     res.json({ success: true });
+  });
+});
+
 // Serve static assets from build in production mode
 const distPath = path.join(__dirname, '../dist');
 if (fs.existsSync(distPath)) {
