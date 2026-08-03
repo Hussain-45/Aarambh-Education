@@ -27,7 +27,6 @@ import TeacherAttendance from './pages/TeacherAttendance';
 import TeacherAssignments from './pages/TeacherAssignments';
 import MyBatches from './pages/MyBatches';
 import Quizzes from './pages/Quizzes';
-import StudyCompanion from './pages/StudyCompanion';
 import SyllabusTracker from './pages/SyllabusTracker';
 import Flashcards from './pages/Flashcards';
 import Leaderboard from './pages/Leaderboard';
@@ -115,7 +114,6 @@ const AppLayout = () => {
         
         {/* New Features Routes */}
         <Route path="/quizzes" element={<AuthRoute allowedRoles={['admin', 'teacher', 'student']}><Quizzes /></AuthRoute>} />
-        <Route path="/study-companion" element={<AuthRoute allowedRoles={['admin', 'teacher', 'student']}><StudyCompanion /></AuthRoute>} />
         <Route path="/syllabus" element={<AuthRoute allowedRoles={['admin', 'teacher', 'student']}><SyllabusTracker /></AuthRoute>} />
         <Route path="/flashcards" element={<StudentRoute><Flashcards /></StudentRoute>} />
         <Route path="/leaderboard" element={<StudentRoute><Leaderboard /></StudentRoute>} />

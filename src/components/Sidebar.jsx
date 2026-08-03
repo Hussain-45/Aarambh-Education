@@ -2,7 +2,7 @@ import React, { useContext } from 'react';
 import { LayoutDashboard, Users, BookOpen, CheckSquare, Settings, LogOut, IndianRupee, MessageSquare, Calendar, ClipboardList, Clock, Trophy, GraduationCap, Sparkles, UserPlus, LifeBuoy, Award } from 'lucide-react';
 import { AppContext } from '../context/AppContext';
 import { useNavigate, useLocation } from 'react-router-dom';
-import logoImg from '../assets/image_7cc2c3.jpg';
+import logoImg from '../assets/aarambh_logo.png';
 
 const SidebarItem = ({ icon: Icon, label, active, onClick }) => (
   <div onClick={onClick} style={{
@@ -107,7 +107,6 @@ const Sidebar = () => {
             <SidebarItem icon={IndianRupee} label="My Receipts" active={path === '/student-receipts'} onClick={() => navigate('/student-receipts')} />
             <SidebarItem icon={BookOpen} label="My Assignments" active={path === '/assignments'} onClick={() => navigate('/assignments')} />
             <SidebarItem icon={Trophy} label="Quizzes & Exams" active={path === '/quizzes'} onClick={() => navigate('/quizzes')} />
-            <SidebarItem icon={Sparkles} label="AI Study Tutor" active={path === '/study-companion'} onClick={() => navigate('/study-companion')} />
             <SidebarItem icon={MessageSquare} label="Batch Chat" active={path === '/batch-chat'} onClick={() => navigate('/batch-chat')} />
             <SidebarItem icon={BookOpen} label="AI Flashcards" active={path === '/flashcards'} onClick={() => navigate('/flashcards')} />
             <SidebarItem icon={Trophy} label="Leaderboard" active={path === '/leaderboard'} onClick={() => navigate('/leaderboard')} />

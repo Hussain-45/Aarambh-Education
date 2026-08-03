@@ -2,7 +2,7 @@ import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppContext } from '../context/AppContext';
 import { Lock, Mail, Loader2 } from 'lucide-react';
-import logoImg from '../assets/image_7cc2c3.jpg';
+import logoImg from '../assets/aarambh_logo.png';
 
 const Login = () => {
   const { loginAdmin, loginTeacher, loginStudent, addToast } = useContext(AppContext);
