@@ -35,6 +35,7 @@ import BatchChat from './pages/BatchChat';
 import Certificates from './pages/Certificates';
 import AdmissionsCRM from './pages/AdmissionsCRM';
 import SupportTickets from './pages/SupportTickets';
+import InstallPwaPrompt from './components/InstallPwaPrompt';
 
 // Admin Protected Route
 const AdminRoute = ({ children }) => {
@@ -125,6 +126,7 @@ const AppLayout = () => {
 
         <Route path="*" element={<Navigate to={isAuthenticated ? getDashboardRoute() : "/login"} replace />} />
       </Routes>
+      <InstallPwaPrompt />
     </div>
   );
 };
