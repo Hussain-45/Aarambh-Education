@@ -427,3 +427,41 @@ header.prof-card:hover,
     filter: none !important;
   }
 }
+
+/* Mobile Responsive Optimization Rules */
+@media (max-width: 768px) {
+  .app-container {
+    padding: 0.75rem !important;
+  }
+  
+  .prof-card {
+    padding: 1rem !important;
+    border-radius: 12px !important;
+  }
+
+  .grid-2, .grid-3, .grid-4 {
+    grid-template-columns: 1fr !important;
+  }
+
+  .flex-between {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.75rem !important;
+  }
+
+  h1 { font-size: 1.35rem !important; }
+  h2 { font-size: 1.15rem !important; }
+  h3 { font-size: 1rem !important; }
+
+  /* Mobile Touch Friendliness */
+  button, input, select {
+    min-height: 42px !important;
+  }
+
+  /* Responsive Tables */
+  .table-responsive {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+}
+
