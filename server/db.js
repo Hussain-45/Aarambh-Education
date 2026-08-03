@@ -1,40 +1,127 @@
 const sqlite3 = require('sqlite3').verbose();
+const { Pool } = require('pg');
 const path = require('path');
 
-const dbPath = path.resolve(__dirname, 'aarambh.db');
-const db = new sqlite3.Database(dbPath, (err) => {
-  if (err) {
-    console.error('Error opening database', err.message);
-  } else {
-    console.log('Connected to the SQLite database.');
-    
-    // Create Tables
-    db.serialize(() => {
-      // Users Table (Admin, Teacher, Student)
-      db.run(`CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        username TEXT UNIQUE,
-        password TEXT NOT NULL,
-        role TEXT NOT NULL,
-        parentPhone TEXT,
-        className TEXT,
-        admission_number TEXT,
-        email TEXT,
-        fatherName TEXT,
-        birthdate TEXT,
-        phone TEXT,
-        motherName TEXT,
-        gender TEXT,
-        bloodGroup TEXT,
-        address TEXT,
-        discountPercent INTEGER DEFAULT 0,
-        registrationDate TEXT,
-        salary INTEGER DEFAULT 0,
-        specialization TEXT,
-        login_approved INTEGER DEFAULT 1,
-        photo TEXT
-      )`);
+const usePostgres = !!process.env.DATABASE_URL;
+let db = {};
+
+if (usePostgres) {
+  console.log('[Database] Connecting to Supabase PostgreSQL Cloud Database...');
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false }
+  });
+
+  // Query wrapper mimicking SQLite callback interface for 100% code compatibility
+  db.run = function (sql, params, callback) {
+    if (typeof params === 'function') {
+      callback = params;
+      params = [];
+    }
+    params = params || [];
+    // Convert SQLite AUTOINCREMENT / ? syntax to Postgres $1, $2 syntax
+    let paramIndex = 1;
+    let pgSql = sql.replace(/\?/g, () => `$${paramIndex++}`)
+                   .replace(/INTEGER PRIMARY KEY AUTOINCREMENT/gi, 'SERIAL PRIMARY KEY')
+                   .replace(/DATETIME DEFAULT CURRENT_TIMESTAMP/gi, 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP');
+
+    pool.query(pgSql, params, (err, res) => {
+      if (callback) callback.call({ lastID: res ? res.insertId : null, changes: res ? res.rowCount : 0 }, err);
+    });
+  };
+
+  db.get = function (sql, params, callback) {
+    if (typeof params === 'function') {
+      callback = params;
+      params = [];
+    }
+    params = params || [];
+    let paramIndex = 1;
+    let pgSql = sql.replace(/\?/g, () => `$${paramIndex++}`);
+    pool.query(pgSql, params, (err, res) => {
+      if (callback) callback(err, res && res.rows.length > 0 ? res.rows[0] : null);
+    });
+  };
+
+  db.all = function (sql, params, callback) {
+    if (typeof params === 'function') {
+      callback = params;
+      params = [];
+    }
+    params = params || [];
+    let paramIndex = 1;
+    let pgSql = sql.replace(/\?/g, () => `$${paramIndex++}`);
+    pool.query(pgSql, params, (err, res) => {
+      if (callback) callback(err, res ? res.rows : []);
+    });
+  };
+
+  db.serialize = function (fn) {
+    if (fn) fn();
+  };
+
+  // Ensure Tables on Supabase PostgreSQL
+  db.serialize(() => {
+    db.run(`CREATE TABLE IF NOT EXISTS users (
+      id SERIAL PRIMARY KEY,
+      name TEXT NOT NULL,
+      username TEXT UNIQUE,
+      password TEXT NOT NULL,
+      role TEXT NOT NULL,
+      parentPhone TEXT,
+      className TEXT,
+      admission_number TEXT,
+      email TEXT,
+      fatherName TEXT,
+      birthdate TEXT,
+      phone TEXT,
+      motherName TEXT,
+      gender TEXT,
+      bloodGroup TEXT,
+      address TEXT,
+      discountPercent INTEGER DEFAULT 0,
+      registrationDate TEXT,
+      salary INTEGER DEFAULT 0,
+      specialization TEXT,
+      login_approved INTEGER DEFAULT 1,
+      photo TEXT
+    )`);
+  });
+} else {
+  const dbPath = path.resolve(__dirname, 'aarambh.db');
+  db = new sqlite3.Database(dbPath, (err) => {
+    if (err) {
+      console.error('Error opening database', err.message);
+    } else {
+      console.log('Connected to the SQLite database.');
+      
+      // Create Tables
+      db.serialize(() => {
+        // Users Table (Admin, Teacher, Student)
+        db.run(`CREATE TABLE IF NOT EXISTS users (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          username TEXT UNIQUE,
+          password TEXT NOT NULL,
+          role TEXT NOT NULL,
+          parentPhone TEXT,
+          className TEXT,
+          admission_number TEXT,
+          email TEXT,
+          fatherName TEXT,
+          birthdate TEXT,
+          phone TEXT,
+          motherName TEXT,
+          gender TEXT,
+          bloodGroup TEXT,
+          address TEXT,
+          discountPercent INTEGER DEFAULT 0,
+          registrationDate TEXT,
+          salary INTEGER DEFAULT 0,
+          specialization TEXT,
+          login_approved INTEGER DEFAULT 1,
+          photo TEXT
+        )`);
 
       // Migration: Ensure all columns exist on users table
       const userCols = [
