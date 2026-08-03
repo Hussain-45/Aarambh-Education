@@ -1950,6 +1950,32 @@ export const AppProvider = ({ children }) => {
     }
   };
 
+  const resetFinancialData = async () => {
+    try {
+      const res = await fetch(`${API_URL}/admin/reset-financial-data`, {
+        method: 'POST',
+        headers: authHeaders
+      });
+      if (res.ok) {
+        setFees([]);
+        setExpenses([]);
+        addToast('All financial data reset successfully.', 'success');
+        return true;
+      } else {
+        const err = await res.json();
+        addToast(err.error || 'Failed to reset financial data.', 'danger');
+        return false;
+      }
+    } catch (e) {
+      setFees([]);
+      setExpenses([]);
+      localStorage.setItem('aarambh_fees', JSON.stringify([]));
+      localStorage.setItem('aarambh_expenses', JSON.stringify([]));
+      addToast('Financial data cleared locally.', 'success');
+      return true;
+    }
+  };
+
   const API_URL = 'http://localhost:5000/api';
   const authHeaders = {
     'Content-Type': 'application/json',
@@ -1971,7 +1997,7 @@ export const AppProvider = ({ children }) => {
       addAssignment, deleteAssignment, addLibraryMaterial, deleteLibraryMaterial, fetchHistory, updateProfile, addAnnouncement, deleteAnnouncement,
       addExpense, editExpense, removeExpense, markAttendance, triggerMarkAttendance, sendMonthlyAttendanceReport, addDoubtTicket, replyToDoubtTicket, deleteHistoryLog, clearAllHistoryLogs,
       addNotification, markAllNotificationsAsRead, addSubmission, deleteSubmission, addOfflineSubmission, syncOfflineSubmissions, gradeSubmission, API_URL, authHeaders,
-      addCalendarEvent, deleteCalendarEvent
+      addCalendarEvent, deleteCalendarEvent, resetFinancialData
     }}>
       {children}
     </AppContext.Provider>

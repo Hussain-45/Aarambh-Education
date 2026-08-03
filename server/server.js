@@ -1683,6 +1683,18 @@ app.get('/api/admin/system-settings', authenticateToken, (req, res) => {
   });
 });
 
+// Reset Financial Data (Fees and Expenses)
+app.post('/api/admin/reset-financial-data', authenticateToken, (req, res) => {
+  if (req.user.role !== 'admin') return res.sendStatus(403);
+  
+  db.serialize(() => {
+    db.run(`DELETE FROM fees`);
+    db.run(`DELETE FROM expenses`);
+    logAction('FINANCIAL_DATA_RESET', `Admin reset all fee records and expenses logs for fresh calculations.`);
+    res.json({ success: true, message: 'All financial data (fees & expenses) reset successfully.' });
+  });
+});
+
 // Update System settings toggles
 app.post('/api/admin/system-settings', authenticateToken, (req, res) => {
   if (req.user.role !== 'admin') return res.sendStatus(403);

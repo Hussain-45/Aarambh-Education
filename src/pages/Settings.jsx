@@ -3,10 +3,10 @@ import { AppContext } from '../context/AppContext';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 import WhatsAppStatus from '../components/WhatsAppStatus';
-import { Moon, Sun, Lock, User, Save, Bell, Globe, MonitorSmartphone, Cloud, Loader, Clock } from 'lucide-react';
+import { Moon, Sun, Lock, User, Save, Bell, Globe, MonitorSmartphone, Cloud, Loader, Clock, RefreshCw, AlertTriangle } from 'lucide-react';
 
 const Settings = () => {
-  const { theme, setTheme, loggedInUser, addToast, authHeaders, API_URL, history, messages, fetchHistory, updateProfile, sendMonthlyAttendanceReport } = useContext(AppContext);
+  const { theme, setTheme, loggedInUser, addToast, authHeaders, API_URL, history, messages, fetchHistory, updateProfile, sendMonthlyAttendanceReport, resetFinancialData } = useContext(AppContext);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
 
@@ -549,6 +549,34 @@ const Settings = () => {
                       style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
                     >
                       📊 Email Monthly Attendance Reports
+                    </button>
+                  </div>
+
+                  <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border-color)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', color: 'var(--danger)', fontWeight: 600 }}>
+                      <AlertTriangle size={18} /> Financial Calculations Reset
+                    </div>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
+                      Clear all previous fee receipts, dues records, and expense logs to start accounting calculations from a fresh zero baseline.
+                    </p>
+                    <button
+                      onClick={async () => {
+                        if (window.confirm("⚠️ ARE YOU SURE?\nThis will clear all fee payment receipts and expense records so you can start financial calculations completely fresh. This cannot be undone.")) {
+                          await resetFinancialData();
+                        }
+                      }}
+                      className="prof-btn"
+                      style={{ 
+                        background: 'var(--danger)', 
+                        color: 'white', 
+                        borderColor: 'var(--danger)', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '0.5rem',
+                        fontWeight: 600
+                      }}
+                    >
+                      <RefreshCw size={16} /> Reset Financial Data
                     </button>
                   </div>
                 </div>
