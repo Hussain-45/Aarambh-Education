@@ -467,5 +467,6 @@ if (usePostgres) {
     });
   }
 });
+}
 
 module.exports = db;
