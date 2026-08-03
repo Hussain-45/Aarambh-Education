@@ -91,77 +91,77 @@ export const AppProvider = ({ children }) => {
       const headers = { 'Authorization': `Bearer ${authToken}` };
 
       // Load classes
-      const clsRes = await fetch('http://localhost:5000/api/classes');
+      const clsRes = await fetch(`${API_URL}/classes`);
       if (clsRes.ok) {
         const clsData = await clsRes.json();
         setClasses(clsData);
       }
 
       // Load teachers
-      const tRes = await fetch('http://localhost:5000/api/teachers', { headers });
+      const tRes = await fetch(`${API_URL}/teachers`, { headers });
       if (tRes.ok) {
         const tData = await tRes.json();
         setTeachers(tData);
       }
 
       // Load students
-      const sRes = await fetch('http://localhost:5000/api/students', { headers });
+      const sRes = await fetch(`${API_URL}/students`, { headers });
       if (sRes.ok) {
         const sData = await sRes.json();
         setStudents(sData);
       }
       
       // Load fees
-      const fRes = await fetch('http://localhost:5000/api/fees', { headers });
+      const fRes = await fetch(`${API_URL}/fees`, { headers });
       if (fRes.ok) {
         const fData = await fRes.json();
         setFees(fData);
       }
 
       // Load expenses
-      const expRes = await fetch('http://localhost:5000/api/expenses', { headers });
+      const expRes = await fetch(`${API_URL}/expenses`, { headers });
       if (expRes.ok) {
         const expData = await expRes.json();
         setExpenses(expData);
       }
 
       // Load assignments
-      const assnRes = await fetch('http://localhost:5000/api/assignments', { headers });
+      const assnRes = await fetch(`${API_URL}/assignments`, { headers });
       if (assnRes.ok) {
         const assnData = await assnRes.json();
         setAssignments(assnData);
       }
 
       // Load library materials
-      const libRes = await fetch('http://localhost:5000/api/library', { headers });
+      const libRes = await fetch(`${API_URL}/library`, { headers });
       if (libRes.ok) {
         const libData = await libRes.json();
         setLibrary(libData);
       }
 
       // Load announcements
-      const annRes = await fetch('http://localhost:5000/api/announcements', { headers });
+      const annRes = await fetch(`${API_URL}/announcements`, { headers });
       if (annRes.ok) {
         const annData = await annRes.json();
         setAnnouncements(annData);
       }
 
       // Load registration requests
-      const reqRes = await fetch('http://localhost:5000/api/admin/requests', { headers });
+      const reqRes = await fetch(`${API_URL}/admin/requests`, { headers });
       if (reqRes.ok) {
         const reqData = await reqRes.json();
         setRegistrationRequests(reqData);
       }
 
       // Load audit logs history
-      const histRes = await fetch('http://localhost:5000/api/admin/history', { headers });
+      const histRes = await fetch(`${API_URL}/admin/history`, { headers });
       if (histRes.ok) {
         const histData = await histRes.json();
         setHistory(histData);
       }
 
       // Load attendance logs
-      const attRes = await fetch('http://localhost:5000/api/attendance', { headers });
+      const attRes = await fetch(`${API_URL}/attendance`, { headers });
       if (attRes.ok) {
         const attData = await attRes.json();
         const mappedData = attData.map(a => ({
@@ -173,42 +173,42 @@ export const AppProvider = ({ children }) => {
       }
 
       // Load submissions
-      const subRes = await fetch('http://localhost:5000/api/submissions', { headers });
+      const subRes = await fetch(`${API_URL}/submissions`, { headers });
       if (subRes.ok) {
         const subData = await subRes.json();
         setSubmissions(subData);
       }
 
       // Load calendar events
-      const evRes = await fetch('http://localhost:5000/api/events', { headers });
+      const evRes = await fetch(`${API_URL}/events`, { headers });
       if (evRes.ok) {
         const evData = await evRes.json();
         setCalendarEvents(evData);
       }
 
       // Load doubt tickets
-      const doubtsRes = await fetch('http://localhost:5000/api/doubts', { headers });
+      const doubtsRes = await fetch(`${API_URL}/doubts`, { headers });
       if (doubtsRes.ok) {
         const doubtsData = await doubtsRes.json();
         setDoubtTickets(doubtsData);
       }
 
       // Load quizzes
-      const quizRes = await fetch('http://localhost:5000/api/quizzes', { headers });
+      const quizRes = await fetch(`${API_URL}/quizzes`, { headers });
       if (quizRes.ok) {
         const quizData = await quizRes.json();
         setQuizzes(quizData);
       }
 
       // Load quiz attempts
-      const attemptRes = await fetch('http://localhost:5000/api/quizzes-attempts', { headers });
+      const attemptRes = await fetch(`${API_URL}/quizzes-attempts`, { headers });
       if (attemptRes.ok) {
         const attemptData = await attemptRes.json();
         setQuizAttempts(attemptData);
       }
 
       // Load syllabus tracker
-      const sylRes = await fetch('http://localhost:5000/api/syllabus', { headers });
+      const sylRes = await fetch(`${API_URL}/syllabus`, { headers });
       if (sylRes.ok) {
         const sylData = await sylRes.json();
         setSyllabus(sylData);
@@ -1976,7 +1976,7 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  const API_URL = 'http://localhost:5000/api';
+  const API_URL = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : 'https://aarambh-backend-1sce.onrender.com/api');
   const authHeaders = {
     'Content-Type': 'application/json',
     ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
