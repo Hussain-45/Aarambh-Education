@@ -38,11 +38,18 @@ const SidebarItem = ({ icon: Icon, label, active, onClick }) => (
 );
 
 const Sidebar = () => {
-  const { logout, userRole, sidebarCollapsed } = useContext(AppContext);
+  const { logout, userRole, sidebarCollapsed, setSidebarCollapsed } = useContext(AppContext);
   const navigate = useNavigate();
   const location = useLocation();
 
   const path = location.pathname;
+
+  const handleNav = (targetPath) => {
+    navigate(targetPath);
+    if (window.innerWidth < 768) {
+      setSidebarCollapsed(true);
+    }
+  };
 
   return (
     <div className={`sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
@@ -66,61 +73,61 @@ const Sidebar = () => {
         {/* Admin Links */}
         {userRole === 'admin' && (
           <>
-            <SidebarItem icon={LayoutDashboard} label="Dashboard" active={path === '/dashboard'} onClick={() => navigate('/dashboard')} />
-            <SidebarItem icon={Users} label="Teachers" active={path === '/teachers'} onClick={() => navigate('/teachers')} />
-            <SidebarItem icon={Users} label="Students" active={path === '/students'} onClick={() => navigate('/students')} />
-            <SidebarItem icon={BookOpen} label="Batches" active={path === '/classes'} onClick={() => navigate('/classes')} />
-            <SidebarItem icon={IndianRupee} label="Expenses" active={path === '/profit-loss'} onClick={() => navigate('/profit-loss')} />
-            <SidebarItem icon={Trophy} label="Quizzes & Exams" active={path === '/quizzes'} onClick={() => navigate('/quizzes')} />
-            <SidebarItem icon={GraduationCap} label="Syllabus Tracker" active={path === '/syllabus'} onClick={() => navigate('/syllabus')} />
-            <SidebarItem icon={MessageSquare} label="Announcements" active={path === '/messages'} onClick={() => navigate('/messages')} />
-            <SidebarItem icon={Calendar} label="Events" active={path === '/calendar'} onClick={() => navigate('/calendar')} />
-            <SidebarItem icon={ClipboardList} label="Requests" active={path === '/requests'} onClick={() => navigate('/requests')} />
-            <SidebarItem icon={UserPlus} label="Admissions CRM" active={path === '/admissions-crm'} onClick={() => navigate('/admissions-crm')} />
-            <SidebarItem icon={LifeBuoy} label="Support Desk" active={path === '/tickets'} onClick={() => navigate('/tickets')} />
-            <SidebarItem icon={Award} label="Credentials Gen" active={path === '/certificates'} onClick={() => navigate('/certificates')} />
-            <SidebarItem icon={Clock} label="System History" active={path === '/history'} onClick={() => navigate('/history')} />
+            <SidebarItem icon={LayoutDashboard} label="Dashboard" active={path === '/dashboard'} onClick={() => handleNav('/dashboard')} />
+            <SidebarItem icon={Users} label="Teachers" active={path === '/teachers'} onClick={() => handleNav('/teachers')} />
+            <SidebarItem icon={Users} label="Students" active={path === '/students'} onClick={() => handleNav('/students')} />
+            <SidebarItem icon={BookOpen} label="Batches" active={path === '/classes'} onClick={() => handleNav('/classes')} />
+            <SidebarItem icon={IndianRupee} label="Expenses" active={path === '/profit-loss'} onClick={() => handleNav('/profit-loss')} />
+            <SidebarItem icon={Trophy} label="Quizzes & Exams" active={path === '/quizzes'} onClick={() => handleNav('/quizzes')} />
+            <SidebarItem icon={GraduationCap} label="Syllabus Tracker" active={path === '/syllabus'} onClick={() => handleNav('/syllabus')} />
+            <SidebarItem icon={MessageSquare} label="Announcements" active={path === '/messages'} onClick={() => handleNav('/messages')} />
+            <SidebarItem icon={Calendar} label="Events" active={path === '/calendar'} onClick={() => handleNav('/calendar')} />
+            <SidebarItem icon={ClipboardList} label="Requests" active={path === '/requests'} onClick={() => handleNav('/requests')} />
+            <SidebarItem icon={UserPlus} label="Admissions CRM" active={path === '/admissions-crm'} onClick={() => handleNav('/admissions-crm')} />
+            <SidebarItem icon={LifeBuoy} label="Support Desk" active={path === '/tickets'} onClick={() => handleNav('/tickets')} />
+            <SidebarItem icon={Award} label="Credentials Gen" active={path === '/certificates'} onClick={() => handleNav('/certificates')} />
+            <SidebarItem icon={Clock} label="System History" active={path === '/history'} onClick={() => handleNav('/history')} />
           </>
         )}
 
         {/* Teacher Links */}
         {userRole === 'teacher' && (
           <>
-            <SidebarItem icon={LayoutDashboard} label="Dashboard" active={path === '/teacher-dashboard'} onClick={() => navigate('/teacher-dashboard')} />
-            <SidebarItem icon={Trophy} label="Quizzes & Exams" active={path === '/quizzes'} onClick={() => navigate('/quizzes')} />
-            <SidebarItem icon={MessageSquare} label="Batch Chat" active={path === '/batch-chat'} onClick={() => navigate('/batch-chat')} />
-            <SidebarItem icon={UserPlus} label="Admissions CRM" active={path === '/admissions-crm'} onClick={() => navigate('/admissions-crm')} />
-            <SidebarItem icon={LifeBuoy} label="Support Desk" active={path === '/tickets'} onClick={() => navigate('/tickets')} />
-            <SidebarItem icon={Award} label="Credentials Gen" active={path === '/certificates'} onClick={() => navigate('/certificates')} />
-            <SidebarItem icon={GraduationCap} label="Syllabus Tracker" active={path === '/syllabus'} onClick={() => navigate('/syllabus')} />
-            <SidebarItem icon={MessageSquare} label="Announcements" active={path === '/messages'} onClick={() => navigate('/messages')} />
-            <SidebarItem icon={BookOpen} label="My Batches" active={path === '/classes'} onClick={() => navigate('/classes')} />
-            <SidebarItem icon={Calendar} label="Events" active={path === '/calendar'} onClick={() => navigate('/calendar')} />
+            <SidebarItem icon={LayoutDashboard} label="Dashboard" active={path === '/teacher-dashboard'} onClick={() => handleNav('/teacher-dashboard')} />
+            <SidebarItem icon={Trophy} label="Quizzes & Exams" active={path === '/quizzes'} onClick={() => handleNav('/quizzes')} />
+            <SidebarItem icon={MessageSquare} label="Batch Chat" active={path === '/batch-chat'} onClick={() => handleNav('/batch-chat')} />
+            <SidebarItem icon={UserPlus} label="Admissions CRM" active={path === '/admissions-crm'} onClick={() => handleNav('/admissions-crm')} />
+            <SidebarItem icon={LifeBuoy} label="Support Desk" active={path === '/tickets'} onClick={() => handleNav('/tickets')} />
+            <SidebarItem icon={Award} label="Credentials Gen" active={path === '/certificates'} onClick={() => handleNav('/certificates')} />
+            <SidebarItem icon={GraduationCap} label="Syllabus Tracker" active={path === '/syllabus'} onClick={() => handleNav('/syllabus')} />
+            <SidebarItem icon={MessageSquare} label="Announcements" active={path === '/messages'} onClick={() => handleNav('/messages')} />
+            <SidebarItem icon={BookOpen} label="My Batches" active={path === '/classes'} onClick={() => handleNav('/classes')} />
+            <SidebarItem icon={Calendar} label="Events" active={path === '/calendar'} onClick={() => handleNav('/calendar')} />
           </>
         )}
 
         {/* Student Links */}
         {userRole === 'student' && (
           <>
-            <SidebarItem icon={LayoutDashboard} label="My Dashboard" active={path === '/student-dashboard'} onClick={() => navigate('/student-dashboard')} />
-            <SidebarItem icon={CheckSquare} label="My Attendance" active={path === '/student-attendance'} onClick={() => navigate('/student-attendance')} />
-            <SidebarItem icon={IndianRupee} label="My Receipts" active={path === '/student-receipts'} onClick={() => navigate('/student-receipts')} />
-            <SidebarItem icon={BookOpen} label="My Assignments" active={path === '/assignments'} onClick={() => navigate('/assignments')} />
-            <SidebarItem icon={Trophy} label="Quizzes & Exams" active={path === '/quizzes'} onClick={() => navigate('/quizzes')} />
-            <SidebarItem icon={MessageSquare} label="Batch Chat" active={path === '/batch-chat'} onClick={() => navigate('/batch-chat')} />
-            <SidebarItem icon={BookOpen} label="AI Flashcards" active={path === '/flashcards'} onClick={() => navigate('/flashcards')} />
-            <SidebarItem icon={Trophy} label="Leaderboard" active={path === '/leaderboard'} onClick={() => navigate('/leaderboard')} />
-            <SidebarItem icon={Clock} label="AI Study Planner" active={path === '/study-planner'} onClick={() => navigate('/study-planner')} />
-            <SidebarItem icon={GraduationCap} label="Syllabus Progress" active={path === '/syllabus'} onClick={() => navigate('/syllabus')} />
-            <SidebarItem icon={Calendar} label="Events" active={path === '/calendar'} onClick={() => navigate('/calendar')} />
-            <SidebarItem icon={BookOpen} label="Study Material" active={path === '/library'} onClick={() => navigate('/library')} />
-            <SidebarItem icon={LifeBuoy} label="Support Desk" active={path === '/tickets'} onClick={() => navigate('/tickets')} />
+            <SidebarItem icon={LayoutDashboard} label="My Dashboard" active={path === '/student-dashboard'} onClick={() => handleNav('/student-dashboard')} />
+            <SidebarItem icon={CheckSquare} label="My Attendance" active={path === '/student-attendance'} onClick={() => handleNav('/student-attendance')} />
+            <SidebarItem icon={IndianRupee} label="My Receipts" active={path === '/student-receipts'} onClick={() => handleNav('/student-receipts')} />
+            <SidebarItem icon={BookOpen} label="My Assignments" active={path === '/assignments'} onClick={() => handleNav('/assignments')} />
+            <SidebarItem icon={Trophy} label="Quizzes & Exams" active={path === '/quizzes'} onClick={() => handleNav('/quizzes')} />
+            <SidebarItem icon={MessageSquare} label="Batch Chat" active={path === '/batch-chat'} onClick={() => handleNav('/batch-chat')} />
+            <SidebarItem icon={BookOpen} label="AI Flashcards" active={path === '/flashcards'} onClick={() => handleNav('/flashcards')} />
+            <SidebarItem icon={Trophy} label="Leaderboard" active={path === '/leaderboard'} onClick={() => handleNav('/leaderboard')} />
+            <SidebarItem icon={Clock} label="AI Study Planner" active={path === '/study-planner'} onClick={() => handleNav('/study-planner')} />
+            <SidebarItem icon={GraduationCap} label="Syllabus Progress" active={path === '/syllabus'} onClick={() => handleNav('/syllabus')} />
+            <SidebarItem icon={Calendar} label="Events" active={path === '/calendar'} onClick={() => handleNav('/calendar')} />
+            <SidebarItem icon={BookOpen} label="Study Material" active={path === '/library'} onClick={() => handleNav('/library')} />
+            <SidebarItem icon={LifeBuoy} label="Support Desk" active={path === '/tickets'} onClick={() => handleNav('/tickets')} />
           </>
         )}
       </div>
 
       <div style={{ marginBottom: '1.5rem' }}>
-        <SidebarItem icon={Settings} label="Settings" active={path === '/settings'} onClick={() => navigate('/settings')} />
+        <SidebarItem icon={Settings} label="Settings" active={path === '/settings'} onClick={() => handleNav('/settings')} />
         <SidebarItem icon={LogOut} label="Logout" onClick={logout} />
       </div>
     </div>
